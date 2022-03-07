@@ -4,7 +4,7 @@ import base64
 import requests
 import numpy as np
 
-from IPython.display import Image, HTML, clear_output
+# from IPython.display import Image, HTML, clear_output
 from tqdm import tqdm_notebook, tnrange
 
 
