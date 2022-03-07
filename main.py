@@ -1,31 +1,51 @@
-import os
 from src import utils_def, versions
 import clip
 import torch
 import torch.nn.functional as F
-import torchvision
 from torchvision import transforms
 from torchvision.datasets import CIFAR100
-
+import datetime
 from src.drawing import get_drawing_paths
 from src.render_design import render_save_img
+import pydiffvg
+import torch
+import skimage
+import skimage.io
+import random
+import ttools.modules
+import argparse
+import math
+import torchvision
+import torchvision.transforms as transforms
+import pickle
 
 
-# a, b = versions.get_versions()
-# print(a, b)
-# import torch
+params = {
+    'svg_path': 'data/drawing2.svg',
+    'clip_prompt': 'A red chair.',
+    'neg_prompt': 'A badly drawn sketch.',
+    'neg_prompt_2': 'Many ugly, messy drawings.',
+    'use_neg_prompts': False,
+    'normalize_clip': True,
+}
 
-import sys
-print('A', sys.version)
-print('B', torch.__version__)
-print('C', torch.cuda.is_available())
-print('D', torch.backends.cudnn.enabled)
-device = torch.device('cuda')
-print('E', torch.cuda.get_device_properties(device))
-print('F', torch.tensor([1.0, 2.0]).cuda())
+args = lambda: None
+args.num_paths = 4
+args.num_iter = 1500
+args.max_width = 65
+args.lambda_points = 0.01
+args.lambda_colors = 0.1
+args.lambda_widths = 0.01
+args.lambda_img = 0.01
+args.t1 = 1500
+args.lambda_full_img = 0.001
+
+
+versions.getinfo()
+
+device = torch.device('cuda:0')
 
 # Load the model
-device = torch.device('cuda:0')
 model, preprocess = clip.load('ViT-B/32', device, jit=False)
 with open('data/nouns.txt', 'r') as f:
     nouns = f.readline()
@@ -40,25 +60,16 @@ print(nouns_features.shape, nouns_features.dtype)
 
 
 
-#@title Initializing {vertical-output: true}
-
-
-device = torch.device('cuda:0')
-
 # LOAD THE DRAWING
-path_to_svg_file = 'data/drawing2.svg'
-path_list = get_drawing_paths(path_to_svg_file)
 
-# %cd /content/diffvg/apps/
+path_list = get_drawing_paths(params['svg_path'])
+args.num_paths += len(path_list)
 
-prompt = "A red chair."
-neg_prompt = "A badly drawn sketch."
-neg_prompt_2 = "Many ugly, messy drawings."
-text_input = clip.tokenize(prompt).to(device)
-text_input_neg1 = clip.tokenize(neg_prompt).to(device)
-text_input_neg2 = clip.tokenize(neg_prompt_2).to(device)
-use_negative = False # Use negative prompts?
-use_normalized_clip = True 
+text_input = clip.tokenize(params['clip_prompt']).to(device)
+text_input_neg1 = clip.tokenize(params['neg_prompt']).to(device)
+text_input_neg2 = clip.tokenize(params['neg_prompt_2']).to(device)
+use_negative = params['use_neg_prompts']
+use_normalized_clip = params['normalize_clip']
 
 # Calculate features
 with torch.no_grad():
@@ -66,37 +77,11 @@ with torch.no_grad():
     text_features_neg1 = model.encode_text(text_input_neg1)
     text_features_neg2 = model.encode_text(text_input_neg2)
 
-import pydiffvg
-import torch
-import skimage
-import skimage.io
-import random
-import ttools.modules
-import argparse
-import math
-import torchvision
-import torchvision.transforms as transforms
-import pickle
-
-pydiffvg.set_print_timing(False)
 
 gamma = 1.0
 
-# ARGUMENTS. Feel free to play around with these, especially num_paths.
-args = lambda: None
-args.num_paths = len(path_list) + 4
-args.num_iter = 1500
-args.max_width = 65
-args.lambda_points = 0.01
-args.lambda_colors = 0.1
-args.lambda_widths = 0.01
-args.lambda_img = 0.01
-args.t1 = 1500
-args.lambda_full_img = 0.001
-
-# Use GPU if available
+pydiffvg.set_print_timing(False)
 pydiffvg.set_use_gpu(torch.cuda.is_available())
-device = torch.device('cuda')
 pydiffvg.set_device(device)
 
 canvas_width, canvas_height = 224, 224
@@ -164,7 +149,7 @@ img = img.unsqueeze(0)
 img = img.permute(0, 3, 1, 2) # NHWC -> NCHW
 # utils_def.show_img(img.detach().cpu().numpy()[0])
 
-import datetime
+
 
 with open('tmp/points_vars.pkl', 'rb') as f:
     points_vars0 = pickle.load(f)
