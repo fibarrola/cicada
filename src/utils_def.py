@@ -1,20 +1,11 @@
-import os
 import io
 import PIL.Image, PIL.ImageDraw
 import base64
-import zipfile
-import json
 import requests
 import numpy as np
-import matplotlib.pylab as pl
-import glob
 
 from IPython.display import Image, HTML, clear_output
 from tqdm import tqdm_notebook, tnrange
-
-os.environ['FFMPEG_BINARY'] = 'ffmpeg'
-import moviepy.editor as mvp
-from moviepy.video.io.ffmpeg_writer import FFMPEG_VideoWriter
 
 
 def imread(url, max_size=None, mode=None):
