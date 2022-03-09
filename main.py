@@ -1,51 +1,41 @@
-from src import utils_def, versions
+from src import versions, utils
 import clip
 import torch
-import torch.nn.functional as F
 from torchvision import transforms
-from torchvision.datasets import CIFAR100
 import datetime
 from src.drawing import get_drawing_paths
-from src.render_design import render_save_img
+from src.render_design import add_shape_groups, load_vars, render_save_img, build_random_curves
 import pydiffvg
 import torch
-import skimage
-import skimage.io
-import random
-import ttools.modules
-import argparse
-import math
-import torchvision
 import torchvision.transforms as transforms
-import pickle
 
 
-params = {
-    'svg_path': 'data/drawing2.svg',
-    'clip_prompt': 'A red chair.',
-    'neg_prompt': 'A badly drawn sketch.',
-    'neg_prompt_2': 'Many ugly, messy drawings.',
-    'use_neg_prompts': False,
-    'normalize_clip': True,
-}
+# Parameters 
+params = lambda: None
+params.svg_path = 'data/drawing2.svg'
+params.clip_prompt = 'A red chair.'
+params.neg_prompt = 'A badly drawn sketch.'
+params.neg_prompt_2 = 'Many ugly, messy drawings.'
+params.use_neg_prompts = False
+params.normalize_clip = True
+params.num_paths = 64
+params.canvas_h = 224
+params.canvas_w = 224
+params.num_iter = 1000
+params.max_width = 65
+params.w_points = 0.01
+params.w_colors = 0.1
+params.w_widths = 0.01
+params.w_img = 0.01
+params.w_full_img = 0.001
 
-args = lambda: None
-args.num_paths = 4
-args.num_iter = 1500
-args.max_width = 65
-args.lambda_points = 0.01
-args.lambda_colors = 0.1
-args.lambda_widths = 0.01
-args.lambda_img = 0.01
-args.t1 = 1500
-args.lambda_full_img = 0.001
-
-
+time_str = (datetime.datetime.today() + datetime.timedelta(hours = 11)).strftime("%Y_%m_%d_%H_%M")
 versions.getinfo()
-
 device = torch.device('cuda:0')
 
-# Load the model
+
+# Pre-processing
+
 model, preprocess = clip.load('ViT-B/32', device, jit=False)
 with open('data/nouns.txt', 'r') as f:
     nouns = f.readline()
@@ -53,79 +43,40 @@ with open('data/nouns.txt', 'r') as f:
 nouns = nouns.split(" ")
 noun_prompts = ["a drawing of a " + x for x in nouns]
 
-# Calculate features
+path_list = get_drawing_paths(params.svg_path)
+text_input = clip.tokenize(params.clip_prompt).to(device)
+text_input_neg1 = clip.tokenize(params.neg_prompt).to(device)
+text_input_neg2 = clip.tokenize(params.neg_prompt_2).to(device)
+
 with torch.no_grad():
     nouns_features = model.encode_text(torch.cat([clip.tokenize(noun_prompts).to(device)]))
-print(nouns_features.shape, nouns_features.dtype)
-
-
-
-# LOAD THE DRAWING
-
-path_list = get_drawing_paths(params['svg_path'])
-args.num_paths += len(path_list)
-
-text_input = clip.tokenize(params['clip_prompt']).to(device)
-text_input_neg1 = clip.tokenize(params['neg_prompt']).to(device)
-text_input_neg2 = clip.tokenize(params['neg_prompt_2']).to(device)
-use_negative = params['use_neg_prompts']
-use_normalized_clip = params['normalize_clip']
-
-# Calculate features
-with torch.no_grad():
     text_features = model.encode_text(text_input)
     text_features_neg1 = model.encode_text(text_input_neg1)
     text_features_neg2 = model.encode_text(text_input_neg2)
-
-
-gamma = 1.0
 
 pydiffvg.set_print_timing(False)
 pydiffvg.set_use_gpu(torch.cuda.is_available())
 pydiffvg.set_device(device)
 
-canvas_width, canvas_height = 224, 224
-num_paths = args.num_paths
-max_width = args.max_width
-
 # Image Augmentation Transformation
 augment_trans = transforms.Compose([
     transforms.RandomPerspective(fill=1, p=1, distortion_scale=0.5),
-    transforms.RandomResizedCrop(224, scale=(0.7,0.9)),
+    transforms.RandomResizedCrop(params.canvas_w, scale=(0.7,0.9)),
 ])
 
-if use_normalized_clip:
+if params.normalize_clip:
     augment_trans = transforms.Compose([
     transforms.RandomPerspective(fill=1, p=1, distortion_scale=0.5),
-    transforms.RandomResizedCrop(224, scale=(0.7,0.9)),
+    transforms.RandomResizedCrop(params.canvas_w, scale=(0.7,0.9)),
     transforms.Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711))
 ])
 
-shapes, shape_groups = render_save_img(path_list, canvas_width, canvas_height)
+shapes, shape_groups = render_save_img(path_list, params.canvas_w, params.canvas_h)
+shapes_rnd, shape_groups_rnd = build_random_curves(params.num_paths, params.canvas_w, params.canvas_h)
+shapes += shapes_rnd
+shape_groups = add_shape_groups(shape_groups, shape_groups_rnd)
 
-# Add random curves
-for i in range(num_paths-len(path_list)):
-    num_segments = random.randint(1, 3)
-    num_control_points = torch.zeros(num_segments, dtype = torch.int32) + 2
-    points = []
-    p0 = (random.random(), random.random())
-    points.append(p0)
-    for j in range(num_segments):
-        radius = 0.1
-        p1 = (p0[0] + radius * (random.random() - 0.5), p0[1] + radius * (random.random() - 0.5))
-        p2 = (p1[0] + radius * (random.random() - 0.5), p1[1] + radius * (random.random() - 0.5))
-        p3 = (p2[0] + radius * (random.random() - 0.5), p2[1] + radius * (random.random() - 0.5))
-        points.append(p1)
-        points.append(p2)
-        points.append(p3)
-        p0 = p3
-    points = torch.tensor(points)
-    points[:, 0] *= canvas_width
-    points[:, 1] *= canvas_height
-    path = pydiffvg.Path(num_control_points = num_control_points, points = points, stroke_width = torch.tensor(1.0), is_closed = False)
-    shapes.append(path)
-    path_group = pydiffvg.ShapeGroup(shape_ids = torch.tensor([len(shapes) - 1]), fill_color = None, stroke_color = torch.tensor([random.random(), random.random(), random.random(), random.random()]))
-    shape_groups.append(path_group)
+points_vars0, stroke_width_vars0, color_vars0, img0 = load_vars()
 
 points_vars = []
 stroke_width_vars = []
@@ -139,26 +90,9 @@ for group in shape_groups:
     group.stroke_color.requires_grad = True
     color_vars.append(group.stroke_color)
 
-# Just some diffvg setup
 scene_args = pydiffvg.RenderFunction.serialize_scene(\
-    canvas_width, canvas_height, shapes, shape_groups)
+    params.canvas_w, params.canvas_h, shapes, shape_groups)
 render = pydiffvg.RenderFunction.apply
-img = render(canvas_width, canvas_height, 2, 2, 0, None, *scene_args)
-img = img[:, :, :3]
-img = img.unsqueeze(0)
-img = img.permute(0, 3, 1, 2) # NHWC -> NCHW
-# utils_def.show_img(img.detach().cpu().numpy()[0])
-
-
-
-with open('tmp/points_vars.pkl', 'rb') as f:
-    points_vars0 = pickle.load(f)
-with open('tmp/stroke_width_vars.pkl', 'rb') as f:
-    stroke_width_vars0 = pickle.load(f)
-with open('tmp/color_vars.pkl', 'rb') as f:
-    color_vars0 = pickle.load(f)
-with open('tmp/img0.pkl', 'rb') as f:
-    img0 = pickle.load(f)
 
 # Optimizers
 points_optim = torch.optim.Adam(points_vars, lr=1.0)
@@ -166,13 +100,13 @@ width_optim = torch.optim.Adam(stroke_width_vars, lr=0.1)
 color_optim = torch.optim.Adam(color_vars, lr=0.01)
 
 # Run the main optimization loop
-for t in range(args.num_iter):
+for t in range(params.num_iter):
 
     # Anneal learning rate (makes videos look cleaner)
-    if t == int(args.num_iter * 0.5):
+    if t == int(params.num_iter * 0.5):
         for g in points_optim.param_groups:
             g['lr'] = 0.4
-    if t == int(args.num_iter * 0.75):
+    if t == int(params.num_iter * 0.75):
         for g in points_optim.param_groups:
             g['lr'] = 0.1
     
@@ -180,22 +114,17 @@ for t in range(args.num_iter):
     width_optim.zero_grad()
     color_optim.zero_grad()
     scene_args = pydiffvg.RenderFunction.serialize_scene(\
-        canvas_width, canvas_height, shapes, shape_groups)
-    img = render(canvas_width, canvas_height, 2, 2, t, None, *scene_args)
+        params.canvas_w, params.canvas_h, shapes, shape_groups)
+    img = render(params.canvas_w, params.canvas_h, 2, 2, t, None, *scene_args)
     img = img[:, :, 3:4] * img[:, :, :3] + torch.ones(img.shape[0], img.shape[1], 3, device = pydiffvg.get_device()) * (1 - img[:, :, 3:4])
 
-    l_img = torch.norm(img[canvas_height//2:,:,:]-img0[canvas_height//2:,:,:])
-    if t > args.t1:
-        l_full_img = args.lambda_full_img*torch.norm(torch.ones_like(img)-img)
-    else:
-        l_full_img = 0
+    l_img = torch.norm(img[params.canvas_h//2:,:,:]-img0[params.canvas_h//2:,:,:])
 
     img = img[:, :, :3]
     img = img.unsqueeze(0)
     img = img.permute(0, 3, 1, 2) # NHWC -> NCHW
 
     loss = 0
-    
 
     NUM_AUGS = 4
     img_augs = []
@@ -205,16 +134,16 @@ for t in range(args.num_iter):
     image_features = model.encode_image(im_batch)
     for n in range(NUM_AUGS):
         loss -= torch.cosine_similarity(text_features, image_features[n:n+1], dim=1)
-        if use_negative:
+        if params.use_neg_prompts:
             loss += torch.cosine_similarity(text_features_neg1, image_features[n:n+1], dim=1) * 0.3
             loss += torch.cosine_similarity(text_features_neg2, image_features[n:n+1], dim=1) * 0.3
 
     l_points = 0
     l_widths = 0
     l_colors = 0
+    
     style_images = [0 for k in range(4)]
     l_style = torch.tensor([0 for im in style_images])
-
     # # don't do this every time
     # for k, im in enumerate(style_images):
     #     gen_features=style_model(img)
@@ -227,12 +156,10 @@ for t in range(args.num_iter):
         l_colors += torch.norm(color_vars[k]-color_vars0[k])
         l_widths += torch.norm(stroke_width_vars[k]-stroke_width_vars0[k])
     
-    loss += args.lambda_points*l_points
-    loss += args.lambda_colors*l_colors
-    loss += args.lambda_widths*l_widths
-    loss += args.lambda_img*l_img
-    loss += l_full_img
-
+    loss += params.w_points*l_points
+    loss += params.w_colors*l_colors
+    loss += params.w_widths*l_widths
+    loss += params.w_img*l_img
     
 
     # Backpropagate the gradients.
@@ -243,7 +170,7 @@ for t in range(args.num_iter):
     width_optim.step()
     color_optim.step()
     for path in shapes:
-        path.stroke_width.data.clamp_(1.0, max_width)
+        path.stroke_width.data.clamp_(1.0, params.max_width)
     for group in shape_groups:
         group.stroke_color.data.clamp_(0.0, 1.0)
     
@@ -259,6 +186,8 @@ for t in range(args.num_iter):
             print('l_style: ', l.item())
         print('iteration:', t)
         with torch.no_grad():
+            pydiffvg.imwrite(img.cpu().permute(0, 2, 3, 1).squeeze(0), 'results/'+time_str+'.png', gamma=1)
+
             im_norm = image_features / image_features.norm(dim=-1, keepdim=True)
             noun_norm = nouns_features / nouns_features.norm(dim=-1, keepdim=True)
             similarity = (100.0 * im_norm @ noun_norm.T).softmax(dim=-1)
@@ -267,16 +196,5 @@ for t in range(args.num_iter):
             for value, index in zip(values, indices):
                 print(f"{nouns[index]:>16s}: {100 * value.item():.2f}%")
 
-time_str = (datetime.datetime.today() + datetime.timedelta(hours = 11)).strftime("%Y_%m_%d_%H_%M")
-img = img.permute(0, 2, 3, 1)
-img = img.squeeze(0)
-pydiffvg.imwrite(img.cpu(), 'results/'+time_str+'.png', gamma=1)
-with open('results/'+time_str+'.txt', 'w') as f:
-    f.write('I0: ' +path_to_svg_file +'\n')
-    f.write('prompt: ' +str(prompt) +'\n')
-    f.write('num paths: ' +str(args.num_paths) +'\n')
-    f.write('num_iter: ' +str(args.num_iter) +'\n')
-    f.write('lambda_points: '+str(args.lambda_points)+'\n')
-    f.write('lambda_colors: '+str(args.lambda_colors)+'\n')
-    f.write('lambda_widths: '+str(args.lambda_widths)+'\n')
-    f.write('lambda_img: '+str(args.lambda_img)+'\n')
+pydiffvg.imwrite(img.cpu().permute(0, 2, 3, 1).squeeze(0), 'results/'+time_str+'.png', gamma=1)
+utils.save_data(time_str, params)
