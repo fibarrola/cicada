@@ -56,7 +56,7 @@ def render_save_img(path_list, canvas_height, canvas_width):
     return shapes, shape_groups
 
 
-def build_random_curves(num_paths, canvas_width, canvas_height):
+def build_random_curves(num_paths, canvas_width, canvas_height, x0, x1, y0, y1):
 
     # Initialize Curves
     shapes = []
@@ -67,7 +67,7 @@ def build_random_curves(num_paths, canvas_width, canvas_height):
         num_segments = random.randint(1, 3)
         num_control_points = torch.zeros(num_segments, dtype = torch.int32) + 2
         points = []
-        p0 = (random.random(), random.random())
+        p0 = (random.random()*(x1-x0)+x0, random.random()*(y1-y0)+1-y1)
         points.append(p0)
         for j in range(num_segments):
             radius = 0.1

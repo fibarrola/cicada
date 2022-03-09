@@ -28,6 +28,12 @@ params.w_colors = 0.1
 params.w_widths = 0.01
 params.w_img = 0.01
 params.w_full_img = 0.001
+params.area = {
+    'x0': 0.2,
+    'x1': 0.8,
+    'y0': 0.5,
+    'y1': 1.,
+}
 
 time_str = (datetime.datetime.today() + datetime.timedelta(hours = 11)).strftime("%Y_%m_%d_%H_%M")
 versions.getinfo()
@@ -72,7 +78,15 @@ if params.normalize_clip:
 ])
 
 shapes, shape_groups = render_save_img(path_list, params.canvas_w, params.canvas_h)
-shapes_rnd, shape_groups_rnd = build_random_curves(params.num_paths, params.canvas_w, params.canvas_h)
+shapes_rnd, shape_groups_rnd = build_random_curves(
+    params.num_paths,
+    params.canvas_w,
+    params.canvas_h,
+    params.area['x0'],
+    params.area['x1'],
+    params.area['y0'],
+    params.area['y1'],
+    )
 shapes += shapes_rnd
 shape_groups = add_shape_groups(shape_groups, shape_groups_rnd)
 
@@ -93,6 +107,15 @@ for group in shape_groups:
 scene_args = pydiffvg.RenderFunction.serialize_scene(\
     params.canvas_w, params.canvas_h, shapes, shape_groups)
 render = pydiffvg.RenderFunction.apply
+
+mask = utils.area_mask(
+    params.canvas_w,
+    params.canvas_h,
+    params.area['x0'],
+    params.area['x1'],
+    params.area['y0'],
+    params.area['y1'],
+    ).to(device)
 
 # Optimizers
 points_optim = torch.optim.Adam(points_vars, lr=1.0)
@@ -118,7 +141,10 @@ for t in range(params.num_iter):
     img = render(params.canvas_w, params.canvas_h, 2, 2, t, None, *scene_args)
     img = img[:, :, 3:4] * img[:, :, :3] + torch.ones(img.shape[0], img.shape[1], 3, device = pydiffvg.get_device()) * (1 - img[:, :, 3:4])
 
-    l_img = torch.norm(img[params.canvas_h//2:,:,:]-img0[params.canvas_h//2:,:,:])
+    if params.w_img >0:
+        l_img = torch.norm((img-img0)*mask)
+    else:
+        l_img = torch.tensor(0, device=device)
 
     img = img[:, :, :3]
     img = img.unsqueeze(0)
