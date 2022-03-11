@@ -12,8 +12,8 @@ import torchvision.transforms as transforms
 
 # Parameters 
 params = lambda: None
-params.svg_path = 'data/drawing2.svg'
-params.clip_prompt = 'A red chair.'
+params.svg_path = 'data/drawing_mug.svg'
+params.clip_prompt = 'A mug.'
 params.neg_prompt = 'A badly drawn sketch.'
 params.neg_prompt_2 = 'Many ugly, messy drawings.'
 params.use_neg_prompts = False

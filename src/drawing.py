@@ -1,4 +1,8 @@
 import torch
+from svgpathtools import svg2paths
+from xml.dom import minidom
+from svgelements import *
+
 
 class DrawingPath():
     def __init__(self, path, color, width, num_segments):
@@ -7,25 +11,39 @@ class DrawingPath():
         self.width = width
         self.num_segments = num_segments
 
+def get_width(line):
+    width_idx_0 = prop_line.find('stroke-width:')
+    width_idx_1 = min( prop_line[width_idx_0+13:].find(';'), prop_line[width_idx_0+13:].find('p') )
+    width = float(prop_line[width_idx_0+13:width_idx_0+13+width_idx_1])
+    width = torch.tensor(width)
 
 def get_drawing_paths(path_to_svg_file):
     f =  open(path_to_svg_file, 'r')
     lines = f.readlines()
     f.close()
-
     path_list = []
+    
+    paths, attributes = svg2paths(path_to_svg_file)
+
+    
+
+    aSDAS
 
     for l, line in enumerate(lines):
         if len(line)<9:
             continue
         if line[:9] == '    <path':
-            prop_line = lines[l+1]
-            path_line = lines[l+2]
+            for k in range(1,4):
+                if lines[l+k][7:12] == 'style':
+                    prop_line = lines[l+k]
+                elif lines[l+k][7] == 'd':
+                    path_line = lines[l+k]
+            
             # Get color
             color_idx_0 = prop_line.find('stroke:#')
             color_idx_1 = prop_line[color_idx_0+8:].find(';')
             opacity_idx_0 = prop_line.find('stroke-opacity:')
-            opacity_idx_1 = prop_line[opacity_idx_0+15:].find('"')
+            opacity_idx_1 = min( [prop_line[opacity_idx_0+15:].find('"'), prop_line[opacity_idx_0+15:].find(';')])
             hex = prop_line[color_idx_0+8:color_idx_0+8+color_idx_1]
             color = list(int(hex[i:i+2], 16)/255 for i in (0, 2, 4))
             color.append(float(prop_line[opacity_idx_0+15:opacity_idx_0+15+opacity_idx_1]))
