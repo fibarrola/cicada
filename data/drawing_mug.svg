@@ -5,15 +5,13 @@
    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
    xmlns:svg="http://www.w3.org/2000/svg"
    xmlns="http://www.w3.org/2000/svg"
-   width="1cm"
-   height="1cm"
-   viewBox="0 0 10 9.9999997"
+   width="1mm"
+   height="1mm"
+   viewBox="0 0 1 1"
    version="1.1"
-   id="svg8">
-  <defs
-     id="defs2" />
+   id="svg5">
   <metadata
-     id="metadata5">
+     id="metadata5437">
     <rdf:RDF>
       <cc:Work
          rdf:about="">
@@ -24,17 +22,14 @@
       </cc:Work>
     </rdf:RDF>
   </metadata>
-  <g
-     style="stroke-width:0.26458332;stroke-miterlimit:4;stroke-dasharray:none"
-     id="layer1"
-     transform="translate(0,-287.00002)">
-    <path
-       style="fill:none;stroke:#000000;stroke-width:0.29999999;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-miterlimit:4;stroke-dasharray:none"
-       d="m 2.5395275,290.12558 c 0.8307601,0.19686 1.7224781,0.61529 2.4922804,0.59059 0.7698023,-0.0247 2.0535744,-0.30851 1.9253163,-0.73233 -0.1282581,-0.42382 -1.5797305,-0.49195 -2.2678572,-0.50791 -0.6881267,-0.016 -1.3347284,0.31892 -1.8071986,0.41341"
-       id="path3713" />
-    <path
-       style="fill:none;stroke:#000000;stroke-width:0.29999999;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-miterlimit:4;stroke-dasharray:none"
-       d="m 2.5040922,290.47993 c 0,0 -0.1462643,3.29558 0,3.59077 0.1462643,0.29519 1.6242792,0.82229 2.4450334,0.76777 0.8207542,-0.0545 1.9853026,-0.72573 2.1497396,-1.004 0.164437,-0.27827 0,-3.55534 0,-3.55534"
-       id="path3715" />
-  </g>
+  <defs
+     id="defs2" />
+  <path
+     id="path6291"
+     d="m 0.32260943,0.33403157 c 0.13401932,-0.0667062 0.10407883,-0.061765 0.19675176,-0.0605296 0.0926729,0.001235 0.2167121,0.0296472 0.21956356,0.0580591 0.002851,0.0284119 -0.16538553,0.0605296 -0.22811797,0.0580591 -0.0627325,-0.00247 -0.16681129,-0.0271766 -0.17964292,-0.0321177"
+     style="fill:none;stroke:#000000;stroke-width:0.02486003;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+  <path
+     id="path6293"
+     d="m 0.33468128,0.37834246 c 0.001399,0.11020794 -0.0279796,0.2806629 0,0.30564335 0.0279796,0.0249805 0.14409438,0.0528998 0.20564927,0.0514304 0.0615549,-0.001469 0.19026055,-0.02645 0.20005336,-0.0514304 0.009793,-0.0249804 0.009793,-0.33209324 0.009793,-0.337971"
+     style="fill:none;stroke:#000000;stroke-width:0.02685818;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
 </svg>
