@@ -133,3 +133,4 @@ dmypy.json
 diffvg/
 results/*
 !results/.gitkeep 
+try_things.py
