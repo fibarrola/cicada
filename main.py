@@ -1,57 +1,65 @@
-from src import versions, utils
 import clip
 import torch
-from torchvision import transforms
-import datetime
-from src.drawing import get_drawing_paths
-from src.render_design import add_shape_groups, load_vars, render_save_img, build_random_curves
 import pydiffvg
 import torch
 import torchvision.transforms as transforms
 import time
+import pickle
+import datetime
+import numpy as np
+from torchvision import transforms
+from src import versions, utils
+from src.drawing import get_drawing_paths
+from src.render_design import add_shape_groups, load_vars, render_save_img, build_random_curves
+from src.style import VGG
 
 
-for trial in range(3):
+   
+# Parameters 
+params = lambda: None
+params.svg_path = 'data/drawing2.svg'
+params.clip_prompt = 'A drawing of a red chair.'
+params.neg_prompt = 'A badly drawn sketch.'
+params.neg_prompt_2 = 'Many ugly, messy drawings.'
+params.use_neg_prompts = False
+params.normalize_clip = True
+params.num_paths = 32
+params.canvas_h = 224
+params.canvas_w = 224
+params.num_iter = 1000
+params.max_width = 40
+params.w_points = 0.01
+params.w_colors = 0.1
+params.w_widths = 0.01
+params.w_img = 0.01
+params.w_full_img = 0.001
+params.area = {
+    'x0': 0.1,
+    'x1': 0.9,
+    'y0': 0.6,
+    'y1': 0.95,
+}
 
-    t0 = time.time()
-    # Parameters 
-    params = lambda: None
-    params.svg_path = 'data/drawing_hat.svg'
-    params.clip_prompt = 'A drawing of a hat.'
-    params.neg_prompt = 'A badly drawn sketch.'
-    params.neg_prompt_2 = 'Many ugly, messy drawings.'
-    params.use_neg_prompts = False
-    params.normalize_clip = True
-    params.num_paths = 32
-    params.canvas_h = 224
-    params.canvas_w = 224
-    params.num_iter = 1000
-    params.max_width = 40
-    params.w_points = 0.01
-    params.w_colors = 0.1
-    params.w_widths = 0.01
-    params.w_img = 0.01
-    params.w_full_img = 0.001
-    params.area = {
-        'x0': 0.1,
-        'x1': 0.9,
-        'y0': 0.6,
-        'y1': 0.95,
-    }
+versions.getinfo()
+device = torch.device('cuda:0')
 
-    time_str = (datetime.datetime.today() + datetime.timedelta(hours = 11)).strftime("%Y_%m_%d_%H_%M_%S")
-    versions.getinfo()
-    device = torch.device('cuda:0')
+style_model = VGG().to(device).eval()
 
 
-    # Pre-processing
+# Pre-processing
 
-    model, preprocess = clip.load('ViT-B/32', device, jit=False)
-    with open('data/nouns.txt', 'r') as f:
-        nouns = f.readline()
-        f.close()
-    nouns = nouns.split(" ")
-    noun_prompts = ["a drawing of a " + x for x in nouns]
+model, preprocess = clip.load('ViT-B/32', device, jit=False)
+with open('data/nouns.txt', 'r') as f:
+    nouns = f.readline()
+    f.close()
+nouns = nouns.split(" ")
+noun_prompts = ["a drawing of a " + x for x in nouns]
+
+top_prediction_list = [0 for k in range(100)]
+
+for trial in range(100):
+    # time_str = (datetime.datetime.today() + datetime.timedelta(hours = 11)).strftime("%Y_%m_%d_%H_%M_%S")
+    time_str = '{number:02d}'.format(number=trial+11)
 
     path_list = get_drawing_paths(params.svg_path)
     text_input = clip.tokenize(params.clip_prompt).to(device)
@@ -218,7 +226,7 @@ for trial in range(3):
                 print('l_style: ', l.item())
             print('iteration:', t)
             with torch.no_grad():
-                pydiffvg.imwrite(img.cpu().permute(0, 2, 3, 1).squeeze(0), 'results/'+time_str+'.png', gamma=1)
+                # pydiffvg.imwrite(img.cpu().permute(0, 2, 3, 1).squeeze(0), 'results/'+time_str+'.png', gamma=1)
 
                 im_norm = image_features / image_features.norm(dim=-1, keepdim=True)
                 noun_norm = nouns_features / nouns_features.norm(dim=-1, keepdim=True)
@@ -228,5 +236,23 @@ for trial in range(3):
                 for value, index in zip(values, indices):
                     print(f"{nouns[index]:>16s}: {100 * value.item():.2f}%")
 
-    pydiffvg.imwrite(img.cpu().permute(0, 2, 3, 1).squeeze(0), 'results/'+time_str+'.png', gamma=1)
+                top_prediction_list[trial] = [nouns[indices[0]], values[0].item()]
+
+    # pydiffvg.imwrite(img.cpu().permute(0, 2, 3, 1).squeeze(0), 'results/'+time_str+'.png', gamma=1)
+    
+    # style_features = style_model(img)
+
+    # with open('results/'+time_str+'_style.pkl', 'wb') as f:
+    #     pickle.dump([x.detach().cpu() for x in style_features], f)
+
     utils.save_data(time_str, params)
+
+X = []
+rate = 0
+for pred in top_prediction_list:
+    if pred[0] == 'hat':
+        rate+=1
+    X.append(pred[1])
+print(top_prediction_list)
+
+print(np.mean(X), np.std(X))
