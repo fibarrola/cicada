@@ -6,6 +6,7 @@ import torchvision.transforms as transforms
 import time
 import pickle
 import datetime
+import numpy as np
 from torchvision import transforms
 from src import versions, utils
 from src.drawing import get_drawing_paths
@@ -39,7 +40,6 @@ params.area = {
     'y1': 0.95,
 }
 
-time_str = (datetime.datetime.today() + datetime.timedelta(hours = 11)).strftime("%Y_%m_%d_%H_%M_%S")
 versions.getinfo()
 device = torch.device('cuda:0')
 
@@ -55,9 +55,11 @@ with open('data/nouns.txt', 'r') as f:
 nouns = nouns.split(" ")
 noun_prompts = ["a drawing of a " + x for x in nouns]
 
-top_prediction_list = [0 for k in range(10)]
+top_prediction_list = [0 for k in range(100)]
 
-for trial in range(10):
+for trial in range(100):
+    # time_str = (datetime.datetime.today() + datetime.timedelta(hours = 11)).strftime("%Y_%m_%d_%H_%M_%S")
+    time_str = '{number:02d}'.format(number=trial+11)
 
     path_list = get_drawing_paths(params.svg_path)
     text_input = clip.tokenize(params.clip_prompt).to(device)
@@ -224,7 +226,7 @@ for trial in range(10):
                 print('l_style: ', l.item())
             print('iteration:', t)
             with torch.no_grad():
-                pydiffvg.imwrite(img.cpu().permute(0, 2, 3, 1).squeeze(0), 'results/'+time_str+'.png', gamma=1)
+                # pydiffvg.imwrite(img.cpu().permute(0, 2, 3, 1).squeeze(0), 'results/'+time_str+'.png', gamma=1)
 
                 im_norm = image_features / image_features.norm(dim=-1, keepdim=True)
                 noun_norm = nouns_features / nouns_features.norm(dim=-1, keepdim=True)
@@ -236,13 +238,21 @@ for trial in range(10):
 
                 top_prediction_list[trial] = [nouns[indices[0]], values[0].item()]
 
-    pydiffvg.imwrite(img.cpu().permute(0, 2, 3, 1).squeeze(0), 'results/'+time_str+'.png', gamma=1)
+    # pydiffvg.imwrite(img.cpu().permute(0, 2, 3, 1).squeeze(0), 'results/'+time_str+'.png', gamma=1)
     
-    style_features = style_model(img)
+    # style_features = style_model(img)
 
-    with open('results/'+time_str+'_style.pkl', 'wb') as f:
-        pickle.dump([x.detach().cpu() for x in style_features], f)
+    # with open('results/'+time_str+'_style.pkl', 'wb') as f:
+    #     pickle.dump([x.detach().cpu() for x in style_features], f)
 
     utils.save_data(time_str, params)
 
+X = []
+rate = 0
+for pred in top_prediction_list:
+    if pred[0] == 'hat':
+        rate+=1
+    X.append(pred[1])
 print(top_prediction_list)
+
+print(np.mean(X), np.std(X))
