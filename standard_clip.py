@@ -17,29 +17,18 @@ from src.style import VGG
    
 # Parameters 
 params = lambda: None
-params.svg_path = 'data/drawing_hat.svg'
-params.clip_prompt = 'A drawing of a hat.'
+# params.svg_path: ''
+params.clip_prompt = 'A drawing of a plant.'
 params.neg_prompt = 'A badly drawn sketch.'
 params.neg_prompt_2 = 'Many ugly, messy drawings.'
 params.use_neg_prompts = False
 params.normalize_clip = True
-params.num_paths = 8
+params.num_paths = 64
 params.canvas_h = 224
 params.canvas_w = 224
 params.num_iter = 1000
 params.max_width = 40
-params.w_points = 0.01
-params.w_colors = 0.1
-params.w_widths = 0.01
-params.w_img = 0.01
-params.w_full_img = 0.001
-params.area = {
-    'x0': 0.0,
-    'x1': 1.0,
-    'y0': 0.6,
-    'y1': 1.0
-}
-params.num_trials = 10
+params.num_trials = 30
 
 versions.getinfo()
 device = torch.device('cuda:0')
@@ -57,10 +46,8 @@ nouns = nouns.split(" ")
 noun_prompts = ["a drawing of a " + x for x in nouns]
 
 for trial in range(params.num_trials):
-    time_str = (datetime.datetime.today() + datetime.timedelta(hours = 11)).strftime("%Y_%m_%d_%H_%M_%S")
-    # time_str = '{number:02d}'.format(number=trial+11)
+    time_str = 'plant_{number:02d}'.format(number=trial)
 
-    path_list = get_drawing_paths(params.svg_path)
     text_input = clip.tokenize(params.clip_prompt).to(device)
     text_input_neg1 = clip.tokenize(params.neg_prompt).to(device)
     text_input_neg2 = clip.tokenize(params.neg_prompt_2).to(device)
@@ -88,19 +75,16 @@ for trial in range(params.num_trials):
         transforms.Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711))
     ])
 
-    shapes, shape_groups = render_save_img(path_list, params.canvas_w, params.canvas_h)
-    shapes_rnd, shape_groups_rnd = build_random_curves(
+    shapes, shape_groups = build_random_curves(
         params.num_paths,
         params.canvas_w,
         params.canvas_h,
-        params.area['x0'],
-        params.area['x1'],
-        params.area['y0'],
-        params.area['y1'],
+        0,
+        1,
+        0,
+        1,
         )
-    shapes += shapes_rnd
-    shape_groups = add_shape_groups(shape_groups, shape_groups_rnd)
-
+ 
     points_vars0, stroke_width_vars0, color_vars0, img0 = load_vars()
 
     points_vars = []
@@ -115,28 +99,10 @@ for trial in range(params.num_trials):
         group.stroke_color.requires_grad = True
         color_vars.append(group.stroke_color)
 
-    with torch.no_grad():
-        scene_args = pydiffvg.RenderFunction.serialize_scene(\
-            params.canvas_w, params.canvas_h, shapes, shape_groups)
-        render = pydiffvg.RenderFunction.apply
-        img = render(params.canvas_w, params.canvas_h, 2, 2, 0, None, *scene_args)
-        img = img[:, :, 3:4] * img[:, :, :3] + torch.ones(img.shape[0], img.shape[1], 3, device = pydiffvg.get_device()) * (1 - img[:, :, 3:4])
-        pydiffvg.imwrite(img.cpu(), 'results/'+time_str+'_0.png', gamma=1)
-        del img
-
     scene_args = pydiffvg.RenderFunction.serialize_scene(\
         params.canvas_w, params.canvas_h, shapes, shape_groups)
     render = pydiffvg.RenderFunction.apply
 
-
-    mask = utils.area_mask(
-        params.canvas_w,
-        params.canvas_h,
-        params.area['x0'],
-        params.area['x1'],
-        params.area['y0'],
-        params.area['y1'],
-        ).to(device)
 
     # Optimizers
     points_optim = torch.optim.Adam(points_vars, lr=0.5)
@@ -153,11 +119,6 @@ for trial in range(params.num_trials):
             params.canvas_w, params.canvas_h, shapes, shape_groups)
         img = render(params.canvas_w, params.canvas_h, 2, 2, t, None, *scene_args)
         img = img[:, :, 3:4] * img[:, :, :3] + torch.ones(img.shape[0], img.shape[1], 3, device = pydiffvg.get_device()) * (1 - img[:, :, 3:4])
-
-        if params.w_img >0:
-            l_img = torch.norm((img-img0)*mask)
-        else:
-            l_img = torch.tensor(0, device=device)
 
         img = img[:, :, :3]
         img = img.unsqueeze(0)
@@ -177,29 +138,6 @@ for trial in range(params.num_trials):
                 loss += torch.cosine_similarity(text_features_neg1, image_features[n:n+1], dim=1) * 0.3
                 loss += torch.cosine_similarity(text_features_neg2, image_features[n:n+1], dim=1) * 0.3
 
-        l_points = 0
-        l_widths = 0
-        l_colors = 0
-        
-        style_images = [0 for k in range(4)]
-        l_style = torch.tensor([0 for im in style_images])
-        # # don't do this every time
-        # for k, im in enumerate(style_images):
-        #     gen_features=style_model(img)
-        #     style_features=style_model(im)
-        #     for gen,style in zip(gen_features, style_features):
-        #         l_style[k] += calc_style_loss(gen, style)
-            
-        for k, points0 in enumerate(points_vars0):
-            l_points += torch.norm(points_vars[k]-points0)
-            l_colors += torch.norm(color_vars[k]-color_vars0[k])
-            l_widths += torch.norm(stroke_width_vars[k]-stroke_width_vars0[k])
-        
-        loss += params.w_points*l_points
-        loss += params.w_colors*l_colors
-        loss += params.w_widths*l_widths
-        loss += params.w_img*l_img
-        
 
         # Backpropagate the gradients.
         loss.backward()
@@ -217,12 +155,6 @@ for trial in range(params.num_trials):
             # utils_def.show_img(img.detach().cpu().numpy()[0])
             # show_img(torch.cat([img.detach(), img_aug.detach()], axis=3).cpu().numpy()[0])
             print('render loss:', loss.item())
-            print('l_points: ', l_points.item())
-            print('l_colors: ', l_colors.item())
-            print('l_widths: ', l_widths.item())
-            print('l_img: ', l_img.item())
-            for l in l_style:
-                print('l_style: ', l.item())
             print('iteration:', t)
             with torch.no_grad():
                 # pydiffvg.imwrite(img.cpu().permute(0, 2, 3, 1).squeeze(0), 'results/'+time_str+'.png', gamma=1)
@@ -244,7 +176,7 @@ for trial in range(params.num_trials):
     # with open('results/'+time_str+'_style.pkl', 'wb') as f:
     #     pickle.dump([x.detach().cpu() for x in style_features], f)
 
-    utils.save_data(time_str, params)
+    # utils.save_data(time_str, params)
 
 # X = []
 # rate = 0
