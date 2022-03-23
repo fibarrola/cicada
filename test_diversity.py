@@ -74,7 +74,7 @@ plt.plot(stdevs_1, 'o')
 plt.box(on=False)
 plt.legend(['User-drawn','Agent-drawn'])
 plt.xlabel('layer')
-plt.xticks(ticks=[], labels=None) 
+plt.xticks(ticks=range(5), labels=['0','5','10','19','28']) 
 plt.ylabel('mean stdev')
 
 
