@@ -41,10 +41,10 @@ class VGG(nn.Module):
 
 #Defining a class that for the model
 class VGG2(nn.Module):
-    def __init__(self):
+    def __init__(self, layer_list):
         super(VGG2,self).__init__()
         LMAX = 50
-        self.req_features= [str(x) for x in [27,29,31,32,34,36]] 
+        self.req_features= [str(x) for x in layer_list] 
         #Since we need only the 5 layers in the model so we will be dropping all the rest layers from the features of the model
         self.model=models.vgg19(pretrained=True).features[:LMAX] #model will contain the first 29 layers
     

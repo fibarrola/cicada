@@ -50,7 +50,9 @@ for l in range(len(style_features[0][0])):
     print(shape_change, color_change, multi_change, multi_change > color_change and multi_change > shape_change)
 
 
-style_model = VGG2().to(device).eval()
+layers = list(range(36))
+# layers = [27,29,31,32,34,36]
+style_model = VGG2(layers).to(device).eval()
 style_features = []
 
 print('\n Norms of vectorized layer activations')
@@ -69,16 +71,16 @@ for l in range(len(style_features[0])):
     print(vals)
 
 
-img_names = os.listdir('results/pca_training')
-style_model = VGG2().to(device).eval()
+img_names = os.listdir('results/pca_training2')
 style_features = []
 for img_name in img_names:
-    path = f'results/pca_training/{img_name}'
+    path = f'results/pca_training2/{img_name}'
     img = image_loader(path).squeeze(0)
     img = img.permute(1,2,0)
     if img.size(2) == 4:
         img = img[:, :, 3:4] * img[:, :, :3] + torch.ones(img.shape[0], img.shape[1], 3, device = device) * (1 - img[:, :, 3:4])
     style_features.append(style_model(img.permute(2,0,1)))
+    style_features.append(style_model(img.permute(2,1,0)))
 
 pca_list = []
 for l in range(len(style_features[0])):
@@ -98,6 +100,27 @@ for j in range(4):
     img = image_loader(path).squeeze(0)
     img = img.permute(1,2,0)
     img = img[:, :, 3:4] * img[:, :, :3] + torch.ones(img.shape[0], img.shape[1], 3, device = device) * (1 - img[:, :, 3:4])
+    style_features.append(style_model(img.permute(2,0,1)))
+
+for l in range(len(style_features[0])):
+    vals = []
+    A = pca_list[l].transform(style_features[0][l].view((1,-1)).detach().cpu())
+    for j in range(1,4):
+        B = pca_list[l].transform(style_features[j][l].view((1,-1)).detach().cpu())
+        vals.append(round(np.linalg.norm(A - B)))
+    
+    print(vals)
+
+
+
+print('\n Norms of PCA-projected layer activations')
+style_features = []
+for img_name in ['chair01.jpeg', 'chair_clip_and_me_64_bf.jpeg', 'chair_clip_and_me_128_bh.jpeg', 'chair_clip_and_me_128_bl.jpeg']:
+    path = f'results/{img_name}'
+    img = image_loader(path).squeeze(0)
+    img = img.permute(1,2,0)
+    if img.size(2) == 4:
+        img = img[:, :, 3:4] * img[:, :, :3] + torch.ones(img.shape[0], img.shape[1], 3, device = device) * (1 - img[:, :, 3:4])
     style_features.append(style_model(img.permute(2,0,1)))
 
 for l in range(len(style_features[0])):
