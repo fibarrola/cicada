@@ -9,7 +9,7 @@ import datetime
 import numpy as np
 from torchvision import transforms
 from src import versions, utils
-from src.drawing import get_drawing_paths
+from src.drawing import get_drawing_paths, treebranch_initialization
 from src.render_design import add_shape_groups, load_vars, render_save_img, build_random_curves
 from src.style import VGG
 from src.loss import Loss
@@ -21,17 +21,17 @@ from src.loss import Loss
 params = lambda: None
 
 # Partial sketch
-params.svg_path = 'data/drawing_chair.svg'
+params.svg_path = 'data/drawing_hat.svg'
 
 # CLIP prompts
-params.clip_prompt = 'A drawing of a red chair.'
+params.clip_prompt = 'A drawing of a person wearing a hat.'
 params.neg_prompt = 'A badly drawn sketch.'
 params.neg_prompt_2 = 'Many ugly, messy drawings.'
 params.use_neg_prompts = False
 params.normalize_clip = True
 
 # Canvas parameters
-params.num_paths = 64
+params.num_paths = 32
 params.canvas_h = 224
 params.canvas_w = 224
 params.max_width = 40
@@ -46,7 +46,7 @@ params.w_full_img = 0.001
 params.drawing_area = {
     'x0': 0.0,
     'x1': 1.0,
-    'y0': 0.5,
+    'y0': 0.6,
     'y1': 1.0
 }
 params.num_trials = 5
@@ -100,7 +100,17 @@ for trial in range(params.num_trials):
     ])
 
     shapes, shape_groups = render_save_img(path_list, params.canvas_w, params.canvas_h)
-    shapes_rnd, shape_groups_rnd = build_random_curves(
+    # shapes_rnd, shape_groups_rnd = build_random_curves(
+    #     params.num_paths,
+    #     params.canvas_w,
+    #     params.canvas_h,
+    #     params.drawing_area['x0'],
+    #     params.drawing_area['x1'],
+    #     params.drawing_area['y0'],
+    #     params.drawing_area['y1'],
+    #     )
+    shapes_rnd, shape_groups_rnd = treebranch_initialization(
+        path_list,
         params.num_paths,
         params.canvas_w,
         params.canvas_h,
@@ -108,7 +118,7 @@ for trial in range(params.num_trials):
         params.drawing_area['x1'],
         params.drawing_area['y0'],
         params.drawing_area['y1'],
-        )
+    )
     shapes += shapes_rnd
     shape_groups = add_shape_groups(shape_groups, shape_groups_rnd)
 
@@ -246,11 +256,15 @@ for trial in range(params.num_trials):
             path.stroke_width.data.clamp_(1.0, params.max_width)
         for group in shape_groups:
             group.stroke_color.data.clamp_(0.0, 1.0)
+
+        if t == 0:
+            with torch.no_grad():
+                pydiffvg.imwrite(img.cpu().permute(0, 2, 3, 1).squeeze(0), 'results/'+time_str+'_0.png', gamma=1)
         
         if t % 50 == 0:         
 
-            random_inds = np.random.randint(2, size = len(points_vars))
-            random_inds = [x==0 for x in random_inds]
+            # random_inds = np.random.randint(2, size = len(points_vars))
+            # random_inds = [x==0 for x in random_inds]
 
             print('render loss:', loss.item())
             print('l_points: ', l_points.item())
