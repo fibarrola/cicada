@@ -1,4 +1,6 @@
 import torch
+import random
+import pydiffvg
 from svgpathtools import svg2paths
 from xml.dom import minidom
 
@@ -109,3 +111,66 @@ def get_drawing_paths(path_to_svg_file):
 
     # dsasd
     # return path_list
+
+
+def treebranch_initialization(path_list, num_paths, canvas_width, canvas_height, x0, x1, y0, y1):
+
+    # Get all endpoints within drawing region
+    starting_points = []
+    for path in path_list:
+        for k in range(path.path.size(0)):
+            if k % 3 == 0:
+                if (x0 < path.path[k,0] < x1) and (y0 < (1-path.path[k,1]) < y1):
+                    starting_points.append(tuple([x.item() for x in path.path[k]]))
+
+    # We build 3 groups:
+    # 1) Curves starting from existing endpoints
+    # 2) Curves starting from curves in 1)
+    # 3) Random curves
+    K1 = num_paths//4
+
+    # Initialize Curves
+    shapes = []
+    shape_groups = []
+    first_endpoints = []
+
+    # Add random curves
+    for k in range(num_paths):
+        num_segments = random.randint(1, 3)
+        num_control_points = torch.zeros(num_segments, dtype = torch.int32) + 2
+        points = []
+        if k < K1:
+            p0 = random.choice(starting_points)
+        elif k < 2*K1:
+            p0 = random.choice(first_endpoints)
+        else:
+            p0 = (random.random()*(x1-x0)+x0, random.random()*(y1-y0)+1-y1)
+        points.append(p0)
+
+        for j in range(num_segments):
+            radius = 0.1
+            p1 = (p0[0] + radius * (random.random() - 0.5), p0[1] + radius * (random.random() - 0.5))
+            p2 = (p1[0] + radius * (random.random() - 0.5), p1[1] + radius * (random.random() - 0.5))
+            p3 = (p2[0] + radius * (random.random() - 0.5), p2[1] + radius * (random.random() - 0.5))
+            points.append(p1)
+            points.append(p2)
+            points.append(p3)
+            p0 = p3
+
+        if k < K1:
+            first_endpoints.append(points[-1])
+
+        points = torch.tensor(points)
+        points[:, 0] *= canvas_width
+        points[:, 1] *= canvas_height
+        path = pydiffvg.Path(num_control_points = num_control_points, points = points, stroke_width = torch.tensor(1.0), is_closed = False)
+        shapes.append(path)
+        path_group = pydiffvg.ShapeGroup(shape_ids = torch.tensor([len(shapes) - 1]), fill_color = None, stroke_color = torch.tensor([random.random(), random.random(), random.random(), random.random()]))
+        shape_groups.append(path_group)
+
+    return shapes, shape_groups
+
+
+
+    
+        
