@@ -1,4 +1,3 @@
-
 import collections
 import clip
 import torch
@@ -22,14 +21,13 @@ class Loss(nn.Module):
 
         self.losses_to_apply = self.get_losses_to_apply()
 
-        self.loss_mapper = \
-            {
-                "l2": L2_(),
-                "lpips": LPIPS(device=args.device).to(args.device),
-                "clip": CLIPLoss(args),
-                "clip_conv_loss": CLIPConvLoss(args),
-                "clip_text": CLIPTextLoss(args)
-            }
+        self.loss_mapper = {
+            "l2": L2_(),
+            "lpips": LPIPS(device=args.device).to(args.device),
+            "clip": CLIPLoss(args),
+            "clip_conv_loss": CLIPConvLoss(args),
+            "clip_text": CLIPTextLoss(args),
+        }
 
     def get_losses_to_apply(self):
         losses_to_apply = []
@@ -49,28 +47,39 @@ class Loss(nn.Module):
                 if epoch > self.start_clip:
                     self.losses_to_apply.append("clip")
 
-    def forward(self, sketches, targets, color_parameters, renderer, epoch, points_optim=None, mode="train"):
+    def forward(
+        self,
+        sketches,
+        targets,
+        color_parameters,
+        renderer,
+        epoch,
+        points_optim=None,
+        mode="train",
+    ):
         loss = 0
         self.update_losses_to_apply(epoch)
 
         losses_dict = dict.fromkeys(
-            self.losses_to_apply, torch.tensor([0.0]).to(self.args.device))
+            self.losses_to_apply, torch.tensor([0.0]).to(self.args.device)
+        )
         loss_coeffs = dict.fromkeys(self.losses_to_apply, 1.0)
         loss_coeffs["clip"] = self.clip_weight
         loss_coeffs["clip_text"] = self.clip_text_guide
 
         for loss_name in self.losses_to_apply:
             if loss_name in ["clip_conv_loss"]:
-                conv_loss = self.loss_mapper[loss_name](
-                    sketches, targets, mode)
+                conv_loss = self.loss_mapper[loss_name](sketches, targets, mode)
                 for layer in conv_loss.keys():
                     losses_dict[layer] = conv_loss[layer]
             elif loss_name == "l2":
                 losses_dict[loss_name] = self.loss_mapper[loss_name](
-                    sketches, targets).mean()
+                    sketches, targets
+                ).mean()
             else:
                 losses_dict[loss_name] = self.loss_mapper[loss_name](
-                    sketches, targets, mode).mean()
+                    sketches, targets, mode
+                ).mean()
             # loss = loss + self.loss_mapper[loss_name](sketches, targets).mean() * loss_coeffs[loss_name]
 
         for key in self.losses_to_apply:
@@ -85,21 +94,27 @@ class CLIPLoss(torch.nn.Module):
         super(CLIPLoss, self).__init__()
 
         self.args = args
-        self.model, clip_preprocess = clip.load(
-            'ViT-B/32', args.device, jit=False)
+        self.model, clip_preprocess = clip.load('ViT-B/32', args.device, jit=False)
         self.model.eval()
         self.preprocess = transforms.Compose(
-            [clip_preprocess.transforms[-1]])  # clip normalisation
+            [clip_preprocess.transforms[-1]]
+        )  # clip normalisation
         self.device = args.device
         self.NUM_AUGS = args.num_aug_clip
         augemntations = []
         if "affine" in args.augemntations:
-            augemntations.append(transforms.RandomPerspective(
-                fill=0, p=1.0, distortion_scale=0.5))
-            augemntations.append(transforms.RandomResizedCrop(
-                224, scale=(0.8, 0.8), ratio=(1.0, 1.0)))
+            augemntations.append(
+                transforms.RandomPerspective(fill=0, p=1.0, distortion_scale=0.5)
+            )
+            augemntations.append(
+                transforms.RandomResizedCrop(224, scale=(0.8, 0.8), ratio=(1.0, 1.0))
+            )
         augemntations.append(
-            transforms.Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711)))
+            transforms.Normalize(
+                (0.48145466, 0.4578275, 0.40821073),
+                (0.26862954, 0.26130258, 0.27577711),
+            )
+        )
         self.augment_trans = transforms.Compose(augemntations)
 
         self.calc_target = True
@@ -118,7 +133,9 @@ class CLIPLoss(torch.nn.Module):
             with torch.no_grad():
                 sketches = self.preprocess(sketches).to(self.device)
                 sketches_features = self.model.encode_image(sketches)
-                return 1. - torch.cosine_similarity(sketches_features, self.targets_features)
+                return 1.0 - torch.cosine_similarity(
+                    sketches_features, self.targets_features
+                )
 
         loss_clip = 0
         sketch_augs = []
@@ -135,8 +152,9 @@ class CLIPLoss(torch.nn.Module):
         sketch_features = self.model.encode_image(sketch_batch)
 
         for n in range(self.NUM_AUGS):
-            loss_clip += (1. - torch.cosine_similarity(
-                sketch_features[n:n+1], self.targets_features, dim=1))
+            loss_clip += 1.0 - torch.cosine_similarity(
+                sketch_features[n : n + 1], self.targets_features, dim=1
+            )
         self.counter += 1
         return loss_clip
         # return 1. - torch.cosine_similarity(sketches_features, self.targets_features)
@@ -153,13 +171,16 @@ class LPIPS(torch.nn.Module):
         self.normalize = normalize
         self.pretrained = pretrained
         augemntations = []
-        augemntations.append(transforms.RandomPerspective(
-            fill=0, p=1.0, distortion_scale=0.5))
-        augemntations.append(transforms.RandomResizedCrop(
-            224, scale=(0.8, 0.8), ratio=(1.0, 1.0)))
+        augemntations.append(
+            transforms.RandomPerspective(fill=0, p=1.0, distortion_scale=0.5)
+        )
+        augemntations.append(
+            transforms.RandomResizedCrop(224, scale=(0.8, 0.8), ratio=(1.0, 1.0))
+        )
         self.augment_trans = transforms.Compose(augemntations)
-        self.feature_extractor = LPIPS._FeatureExtractor(
-            pretrained, pre_relu).to(device)
+        self.feature_extractor = LPIPS._FeatureExtractor(pretrained, pre_relu).to(
+            device
+        )
 
     def _l2_normalize_features(self, x, eps=1e-10):
         nrm = torch.sqrt(torch.sum(x * x, dim=1, keepdim=True))
@@ -191,12 +212,10 @@ class LPIPS(torch.nn.Module):
         # TODO(mgharbi) Apply Richard's linear weights?
 
         if self.normalize:
-            diffs = [torch.sum((p - t) ** 2, 1)
-                     for (p, t) in zip(pred, target)]
+            diffs = [torch.sum((p - t) ** 2, 1) for (p, t) in zip(pred, target)]
         else:
             # mean instead of sum to avoid super high range
-            diffs = [torch.mean((p - t) ** 2, 1)
-                     for (p, t) in zip(pred, target)]
+            diffs = [torch.mean((p - t) ** 2, 1) for (p, t) in zip(pred, target)]
 
         # Spatial average
         diffs = [diff.mean([1, 2]) for diff in diffs]
@@ -227,10 +246,12 @@ class LPIPS(torch.nn.Module):
                 p.requires_grad = False
 
             # Torchvision's normalization: <https://github.com/pytorch/examples/blob/42e5b996718797e45c46a25c55b031e6768f8440/imagenet/main.py#L89-L101>
-            self.register_buffer("shift", torch.Tensor(
-                [0.485, 0.456, 0.406]).view(1, 3, 1, 1))
-            self.register_buffer("scale", torch.Tensor(
-                [0.229, 0.224, 0.225]).view(1, 3, 1, 1))
+            self.register_buffer(
+                "shift", torch.Tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1)
+            )
+            self.register_buffer(
+                "scale", torch.Tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1)
+            )
 
         def forward(self, x):
             feats = []
@@ -251,12 +272,18 @@ class L2_(torch.nn.Module):
         super(L2_, self).__init__()
         # VGG using perceptually-learned weights (LPIPS metric)
         augemntations = []
-        augemntations.append(transforms.RandomPerspective(
-            fill=0, p=1.0, distortion_scale=0.5))
-        augemntations.append(transforms.RandomResizedCrop(
-            224, scale=(0.8, 0.8), ratio=(1.0, 1.0)))
         augemntations.append(
-            transforms.Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711)))
+            transforms.RandomPerspective(fill=0, p=1.0, distortion_scale=0.5)
+        )
+        augemntations.append(
+            transforms.RandomResizedCrop(224, scale=(0.8, 0.8), ratio=(1.0, 1.0))
+        )
+        augemntations.append(
+            transforms.Normalize(
+                (0.48145466, 0.4578275, 0.40821073),
+                (0.26862954, 0.26130258, 0.27577711),
+            )
+        )
         self.augment_trans = transforms.Compose(augemntations)
         # LOG.warning("LPIPS is untested")
 
@@ -286,13 +313,15 @@ class CLIPVisualEncoder(nn.Module):
 
         for i in range(12):  # 12 resblocks in VIT visual transformer
             self.clip_model.visual.transformer.resblocks[i].register_forward_hook(
-                self.make_hook(i))
+                self.make_hook(i)
+            )
 
     def make_hook(self, name):
         def hook(module, input, output):
             if len(output.shape) == 3:
                 self.featuremaps[name] = output.permute(
-                    1, 0, 2)  # LND -> NLD bs, smth, 768
+                    1, 0, 2
+                )  # LND -> NLD bs, smth, 768
             else:
                 self.featuremaps[name] = output
 
@@ -307,21 +336,29 @@ class CLIPVisualEncoder(nn.Module):
 
 
 def l2_layers(xs_conv_features, ys_conv_features, clip_model_name):
-    return [torch.square(x_conv - y_conv).mean() for x_conv, y_conv in
-            zip(xs_conv_features, ys_conv_features)]
+    return [
+        torch.square(x_conv - y_conv).mean()
+        for x_conv, y_conv in zip(xs_conv_features, ys_conv_features)
+    ]
 
 
 def l1_layers(xs_conv_features, ys_conv_features, clip_model_name):
-    return [torch.abs(x_conv - y_conv).mean() for x_conv, y_conv in
-            zip(xs_conv_features, ys_conv_features)]
+    return [
+        torch.abs(x_conv - y_conv).mean()
+        for x_conv, y_conv in zip(xs_conv_features, ys_conv_features)
+    ]
 
 
 def cos_layers(xs_conv_features, ys_conv_features, clip_model_name):
     if "RN" in clip_model_name:
-        return [torch.square(x_conv, y_conv, dim=1).mean() for x_conv, y_conv in
-                zip(xs_conv_features, ys_conv_features)]
-    return [(1 - torch.cosine_similarity(x_conv, y_conv, dim=1)).mean() for x_conv, y_conv in
-            zip(xs_conv_features, ys_conv_features)]
+        return [
+            torch.square(x_conv, y_conv, dim=1).mean()
+            for x_conv, y_conv in zip(xs_conv_features, ys_conv_features)
+        ]
+    return [
+        (1 - torch.cosine_similarity(x_conv, y_conv, dim=1)).mean()
+        for x_conv, y_conv in zip(xs_conv_features, ys_conv_features)
+    ]
 
 
 class CLIPConvLoss(torch.nn.Module):
@@ -340,21 +377,21 @@ class CLIPConvLoss(torch.nn.Module):
         self.clip_conv_loss_type = args.clip_conv_loss_type
         self.clip_fc_loss_type = "Cos"  # args.clip_fc_loss_type
         assert self.clip_conv_loss_type in [
-            "L2", "Cos", "L1",
+            "L2",
+            "Cos",
+            "L1",
         ]
         assert self.clip_fc_loss_type in [
-            "L2", "Cos", "L1",
+            "L2",
+            "Cos",
+            "L1",
         ]
 
-        self.distance_metrics = \
-            {
-                "L2": l2_layers,
-                "L1": l1_layers,
-                "Cos": cos_layers
-            }
+        self.distance_metrics = {"L2": l2_layers, "L1": l1_layers, "Cos": cos_layers}
 
         self.model, clip_preprocess = clip.load(
-            self.clip_model_name, args.device, jit=False)
+            self.clip_model_name, args.device, jit=False
+        )
 
         if self.clip_model_name.startswith("ViT"):
             self.visual_encoder = CLIPVisualEncoder(self.model)
@@ -373,14 +410,16 @@ class CLIPConvLoss(torch.nn.Module):
 
         self.img_size = clip_preprocess.transforms[1].size
         self.model.eval()
-        self.target_transform = transforms.Compose([
-            transforms.ToTensor(),
-        ])  # clip normalisation
-        self.normalize_transform = transforms.Compose([
-            clip_preprocess.transforms[0],  # Resize
-            clip_preprocess.transforms[1],  # CenterCrop
-            clip_preprocess.transforms[-1],  # Normalize
-        ])
+        self.target_transform = transforms.Compose(
+            [transforms.ToTensor(),]
+        )  # clip normalisation
+        self.normalize_transform = transforms.Compose(
+            [
+                clip_preprocess.transforms[0],  # Resize
+                clip_preprocess.transforms[1],  # CenterCrop
+                clip_preprocess.transforms[-1],  # Normalize
+            ]
+        )
 
         self.model.eval()
         self.device = args.device
@@ -388,12 +427,18 @@ class CLIPConvLoss(torch.nn.Module):
 
         augemntations = []
         if "affine" in args.augemntations:
-            augemntations.append(transforms.RandomPerspective(
-                fill=0, p=1.0, distortion_scale=0.5))
-            augemntations.append(transforms.RandomResizedCrop(
-                224, scale=(0.8, 0.8), ratio=(1.0, 1.0)))
+            augemntations.append(
+                transforms.RandomPerspective(fill=0, p=1.0, distortion_scale=0.5)
+            )
+            augemntations.append(
+                transforms.RandomResizedCrop(224, scale=(0.8, 0.8), ratio=(1.0, 1.0))
+            )
         augemntations.append(
-            transforms.Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711)))
+            transforms.Normalize(
+                (0.48145466, 0.4578275, 0.40821073),
+                (0.26862954, 0.26130258, 0.27577711),
+            )
+        )
         self.augment_trans = transforms.Compose(augemntations)
 
         self.clip_fc_layer_dims = None  # self.args.clip_fc_layer_dims
@@ -412,8 +457,10 @@ class CLIPConvLoss(torch.nn.Module):
         conv_loss_dict = {}
         x = sketch.to(self.device)
         y = target.to(self.device)
-        sketch_augs, img_augs = [self.normalize_transform(x)], [
-            self.normalize_transform(y)]
+        sketch_augs, img_augs = (
+            [self.normalize_transform(x)],
+            [self.normalize_transform(y)],
+        )
         if mode == "train":
             for n in range(self.num_augs):
                 augmented_pair = self.augment_trans(torch.cat([x, y]))
@@ -425,16 +472,19 @@ class CLIPConvLoss(torch.nn.Module):
 
         if self.clip_model_name.startswith("RN"):
             xs_fc_features, xs_conv_features = self.forward_inspection_clip_resnet(
-                xs.contiguous())
+                xs.contiguous()
+            )
             ys_fc_features, ys_conv_features = self.forward_inspection_clip_resnet(
-                ys.detach())
+                ys.detach()
+            )
 
         else:
             xs_fc_features, xs_conv_features = self.visual_encoder(xs)
             ys_fc_features, ys_conv_features = self.visual_encoder(ys)
 
         conv_loss = self.distance_metrics[self.clip_conv_loss_type](
-            xs_conv_features, ys_conv_features, self.clip_model_name)
+            xs_conv_features, ys_conv_features, self.clip_model_name
+        )
 
         for layer, w in enumerate(self.args.clip_conv_layer_weights):
             if w:
@@ -442,8 +492,9 @@ class CLIPConvLoss(torch.nn.Module):
 
         if self.clip_fc_loss_weight:
             # fc distance is always cos
-            fc_loss = (1 - torch.cosine_similarity(xs_fc_features,
-                       ys_fc_features, dim=1)).mean()
+            fc_loss = (
+                1 - torch.cosine_similarity(xs_fc_features, ys_fc_features, dim=1)
+            ).mean()
             conv_loss_dict["fc"] = fc_loss * self.clip_fc_loss_weight
 
         self.counter += 1
@@ -455,6 +506,7 @@ class CLIPConvLoss(torch.nn.Module):
                 x = m.relu(bn(conv(x)))
             x = m.avgpool(x)
             return x
+
         x = x.type(self.visual_model.conv1.weight.dtype)
         x = stem(self.visual_model, x)
         x1 = self.layer1(x)
@@ -470,21 +522,27 @@ class CLIPTextLoss(torch.nn.Module):
         super(CLIPTextLoss, self).__init__()
 
         self.args = args
-        self.model, clip_preprocess = clip.load(
-            'ViT-B/32', args.device, jit=False)
+        self.model, clip_preprocess = clip.load('ViT-B/32', args.device, jit=False)
         self.model.eval()
         self.preprocess = transforms.Compose(
-            [clip_preprocess.transforms[-1]])  # clip normalisation
+            [clip_preprocess.transforms[-1]]
+        )  # clip normalisation
         self.device = args.device
         self.NUM_AUGS = args.num_aug_clip
         augemntations = []
         if "affine" in args.augemntations:
-            augemntations.append(transforms.RandomPerspective(
-                fill=0, p=1.0, distortion_scale=0.5))
-            augemntations.append(transforms.RandomResizedCrop(
-                224, scale=(0.8, 0.8), ratio=(1.0, 1.0)))
+            augemntations.append(
+                transforms.RandomPerspective(fill=0, p=1.0, distortion_scale=0.5)
+            )
+            augemntations.append(
+                transforms.RandomResizedCrop(224, scale=(0.8, 0.8), ratio=(1.0, 1.0))
+            )
         augemntations.append(
-            transforms.Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711)))
+            transforms.Normalize(
+                (0.48145466, 0.4578275, 0.40821073),
+                (0.26862954, 0.26130258, 0.27577711),
+            )
+        )
         self.augment_trans = transforms.Compose(augemntations)
 
         self.include_target_in_aug = args.include_target_in_aug
@@ -501,7 +559,9 @@ class CLIPTextLoss(torch.nn.Module):
             with torch.no_grad():
                 sketches = self.preprocess(sketches).to(self.device)
                 sketches_features = self.model.encode_image(sketches)
-                return 1. - torch.cosine_similarity(sketches_features, self.targets_features)
+                return 1.0 - torch.cosine_similarity(
+                    sketches_features, self.targets_features
+                )
 
         loss_clip = 0
         sketch_augs = []
@@ -514,7 +574,8 @@ class CLIPTextLoss(torch.nn.Module):
         sketch_features = self.model.encode_image(sketch_batch)
 
         for n in range(self.NUM_AUGS):
-            loss_clip += (1. - torch.cosine_similarity(
-                sketch_features[n:n+1], self.targets_features, dim=1))
+            loss_clip += 1.0 - torch.cosine_similarity(
+                sketch_features[n : n + 1], self.targets_features, dim=1
+            )
         self.counter += 1
         return loss_clip
