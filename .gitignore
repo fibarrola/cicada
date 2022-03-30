@@ -131,6 +131,7 @@ dmypy.json
 
 # mine
 diffvg/
+olds/
 results/*
 !results/.gitkeep 
 try_things.py
