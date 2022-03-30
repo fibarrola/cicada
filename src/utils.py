@@ -14,11 +14,11 @@ def save_data(time_str, params):
         f.close()
 
 
-def area_mask(width, height, x0=0, x1=1, y0=0, y1=1):
-    j0 = round(x0 * width)
-    j1 = round(x1 * width)
-    i0 = round((1 - y1) * height)
-    i1 = round((1 - y0) * height)
+def area_mask(width, height, drawing_area):
+    j0 = round(drawing_area['x0'] * width)
+    j1 = round(drawing_area['x1'] * width)
+    i0 = round((1 - drawing_area['y1']) * height)
+    i1 = round((1 - drawing_area['y0']) * height)
     mask = torch.ones((height, width, 3))
     mask[i0:i1, j0:j1, :] = torch.zeros((i1 - i0, j1 - j0, 3))
     return mask
