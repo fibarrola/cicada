@@ -2,8 +2,6 @@ import clip
 import torch
 import pydiffvg
 import datetime
-import numpy as np
-from torchvision import transforms
 from src import versions, utils
 from src.svg_extraction import get_drawing_paths
 from src.render_design import (
@@ -12,6 +10,7 @@ from src.render_design import (
     render_save_img,
     treebranch_initialization,
 )
+from src.processing import get_augment_trans
 from config import args
 
 
@@ -26,6 +25,10 @@ with open('data/nouns.txt', 'r') as f:
     f.close()
 nouns = nouns.split(" ")
 noun_prompts = ["a drawing of a " + x for x in nouns]
+
+pydiffvg.set_print_timing(False)
+pydiffvg.set_use_gpu(torch.cuda.is_available())
+pydiffvg.set_device(device)
 
 for trial in range(args.num_trials):
     time_str = (datetime.datetime.today() + datetime.timedelta(hours=11)).strftime(
@@ -45,30 +48,10 @@ for trial in range(args.num_trials):
         text_features_neg1 = model.encode_text(text_input_neg1)
         text_features_neg2 = model.encode_text(text_input_neg2)
 
-    pydiffvg.set_print_timing(False)
-    pydiffvg.set_use_gpu(torch.cuda.is_available())
-    pydiffvg.set_device(device)
-
     # Image Augmentation Transformation
-    augment_trans = transforms.Compose(
-        [
-            transforms.RandomPerspective(fill=1, p=1, distortion_scale=0.5),
-            transforms.RandomResizedCrop(args.canvas_w, scale=(0.7, 0.9)),
-        ]
-    )
+    augment_trans = get_augment_trans(args.canvas_w, args.normalize_clip)
 
-    if args.normalize_clip:
-        augment_trans = transforms.Compose(
-            [
-                transforms.RandomPerspective(fill=1, p=1, distortion_scale=0.5),
-                transforms.RandomResizedCrop(args.canvas_w, scale=(0.7, 0.9)),
-                transforms.Normalize(
-                    (0.48145466, 0.4578275, 0.40821073),
-                    (0.26862954, 0.26130258, 0.27577711),
-                ),
-            ]
-        )
-
+    # Initialize variables
     shapes, shape_groups = render_save_img(path_list, args.canvas_w, args.canvas_h)
     shapes_rnd, shape_groups_rnd = treebranch_initialization(
         path_list, args.num_paths, args.canvas_w, args.canvas_h, args.drawing_area,
@@ -101,9 +84,6 @@ for trial in range(args.num_trials):
     points_optim = torch.optim.Adam(points_vars, lr=0.5)
     width_optim = torch.optim.Adam(stroke_width_vars, lr=0.1)
     color_optim = torch.optim.Adam(color_vars, lr=0.01)
-
-    random_inds = np.random.randint(2, size=len(points_vars))
-    random_inds = [x == 0 for x in random_inds]
 
     # Run the main optimization loop
     for t in range(args.num_iter):
