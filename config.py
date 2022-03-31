@@ -24,11 +24,12 @@ parser.add_argument("--w_points", type=float, help="regularization parameter for
 parser.add_argument("--w_colors", type=float, help="regularization parameter for color differences", default=0.1)
 parser.add_argument("--w_widths", type=float, help="regularization parameter for width differences", default=0.01)
 parser.add_argument("--w_img", type=float, help="regularization parameter for image L2 similarity", default=0.01)
+parser.add_argument("--w_geo", type=float, help="regularization parameter for geometric similarity", default=10.)
 parser.add_argument("--x0", type=float, help="coordinate for drawing area", default=0.0)
 parser.add_argument("--x1", type=float, help="coordinate for drawing area", default=1.0)
 parser.add_argument("--y0", type=float, help="coordinate for drawing area", default=0.5)
 parser.add_argument("--y1", type=float, help="coordinate for drawing area", default=1.0)
-parser.add_argument("--num_trials", type=float, help="number of times to run the algorithm", default=1)
+parser.add_argument("--num_trials", type=int, help="number of times to run the algorithm", default=1)
 
 args = parser.parse_args()
 
