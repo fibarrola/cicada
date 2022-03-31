@@ -12,7 +12,7 @@ from src.render_design import (
 )
 from src.processing import get_augment_trans
 from config import args
-
+from src.loss import CLIPConvLoss2
 
 versions.getinfo(showme=False)
 device = torch.device('cuda:0')
@@ -29,6 +29,8 @@ noun_prompts = ["a drawing of a " + x for x in nouns]
 pydiffvg.set_print_timing(False)
 pydiffvg.set_use_gpu(torch.cuda.is_available())
 pydiffvg.set_device(device)
+
+clipConvLoss = CLIPConvLoss2(device)
 
 for trial in range(args.num_trials):
     time_str = (datetime.datetime.today() + datetime.timedelta(hours=11)).strftime(
@@ -53,6 +55,7 @@ for trial in range(args.num_trials):
 
     # Initialize variables
     shapes, shape_groups = render_save_img(path_list, args.canvas_w, args.canvas_h)
+    S0 = len(shapes)
     shapes_rnd, shape_groups_rnd = treebranch_initialization(
         path_list, args.num_paths, args.canvas_w, args.canvas_h, args.drawing_area,
     )
@@ -91,6 +94,7 @@ for trial in range(args.num_trials):
         points_optim.zero_grad()
         width_optim.zero_grad()
         color_optim.zero_grad()
+
         scene_args = pydiffvg.RenderFunction.serialize_scene(
             args.canvas_w, args.canvas_h, shapes, shape_groups
         )
@@ -98,6 +102,19 @@ for trial in range(args.num_trials):
         img = img[:, :, 3:4] * img[:, :, :3] + torch.ones(
             img.shape[0], img.shape[1], 3, device=pydiffvg.get_device()
         ) * (1 - img[:, :, 3:4])
+
+        scene_args_partial = pydiffvg.RenderFunction.serialize_scene(
+            args.canvas_w, args.canvas_h, shapes[:S0], shape_groups[:S0]
+        )
+        img_partial = render(
+            args.canvas_w, args.canvas_h, 2, 2, t, None, *scene_args_partial
+        )
+        img_partial = img_partial[:, :, 3:4] * img_partial[:, :, :3] + torch.ones(
+            img_partial.shape[0], img_partial.shape[1], 3, device=pydiffvg.get_device()
+        ) * (1 - img_partial[:, :, 3:4])
+        img_partial = img_partial[:, :, :3]
+        img_partial = img_partial.unsqueeze(0)
+        img_partial = img_partial.permute(0, 3, 1, 2)
 
         if args.w_img > 0:
             l_img = torch.norm((img - img0) * mask)
@@ -148,6 +165,12 @@ for trial in range(args.num_trials):
         loss += args.w_widths * l_widths
         loss += args.w_img * l_img
 
+        geo_loss = clipConvLoss(img_partial, img0.permute(2, 0, 1).unsqueeze(0))
+        # geo_loss = clipConvLoss(img, img0.permute(2,0,1).unsqueeze(0))
+
+        for l_name in geo_loss:
+            loss += args.w_geo * geo_loss[l_name]
+
         # Backpropagate the gradients.
         loss.backward()
 
@@ -169,11 +192,13 @@ for trial in range(args.num_trials):
                 )
 
         if t % 50 == 0:
-            print('render loss:', loss.item())
-            print('l_points: ', l_points.item())
-            print('l_colors: ', l_colors.item())
-            print('l_widths: ', l_widths.item())
-            print('l_img: ', l_img.item())
+            print(f'global loss: {loss.item()}')
+            print(f'l_points: {l_points.item()}')
+            print(f'l_colors: {l_colors.item()}')
+            print(f'l_widths: {l_widths.item()}')
+            print(f'l_img: {l_img.item()}')
+            for l_name in geo_loss:
+                print(f'geo loss {l_name}: {geo_loss[l_name].item()}')
             print('iteration:', t)
             with torch.no_grad():
                 pydiffvg.imwrite(
