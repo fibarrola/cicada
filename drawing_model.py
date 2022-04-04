@@ -110,12 +110,6 @@ class DrawingModel:
 
         self.img = img.cpu().permute(0, 2, 3, 1).squeeze(0)
 
-        img_p = self.build_img(
-            self.shapes[: self.num_sketch_paths],
-            self.shape_groups[: self.num_sketch_paths],
-            t,
-        )
-
         loss = 0
 
         img_augs = []
@@ -158,11 +152,20 @@ class DrawingModel:
         loss += args.w_widths * widths_loss
         loss += args.w_img * img_loss
 
-        geo_loss = self.clipConvLoss(img_p, self.img0)
-        # geo_loss = clipConvLoss(img, self.img0.permute(2,0,1).unsqueeze(0))
+        geo_loss = self.clipConvLoss(img, self.img0)
 
         for l_name in geo_loss:
             loss += args.w_geo * geo_loss[l_name]
+
+        if args.w_geo_p > 0:
+            img_p = self.build_img(
+                self.shapes[: self.num_sketch_paths],
+                self.shape_groups[: self.num_sketch_paths],
+                t,
+            )
+            geo_loss = self.clipConvLoss(img_p, self.img0)
+            for l_name in geo_loss:
+                loss += args.w_geo_p * geo_loss[l_name]
 
         # Backpropagate the gradients.
         loss.backward()
