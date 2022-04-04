@@ -37,6 +37,7 @@ for i in range(3):
             img.shape[0], img.shape[1], 3, device=device
         ) * (1 - img[:, :, 3:4])
         loss = clipConvLoss(img.permute(2, 1, 0).unsqueeze(0).to(device), img0)
+        print(loss)
         losses = [
             '\\'
             + 'textcolor{'

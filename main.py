@@ -25,38 +25,43 @@ for trial in range(args.num_trials):
     # Run the main optimization loop
     for t in range(args.num_iter):
 
+        if t == args.num_iter//2:
+            args.w_geo = 3.
+            with torch.no_grad():
+                pydiffvg.imwrite(
+                    drawing_model.img, 'results/' + time_str + '_1.png', gamma=1,
+                )
+
+
         drawing_model.run_epoch(t, args)
 
-        #     # Print stuff
-        #     if t % 50 == 0:
-        #         print(f"Iteration {t}")
-        #         for loss_name in drawing_model.losses:
-        #             if loss_name == 'geometric':
-        #                 for gl_name in drawing_model.losses[loss_name]:
-        #                     print(
-        #                         f'geo loss {gl_name}: {drawing_model.losses[loss_name][gl_name].item()}'
-        #                     )
-        #             else:
-        #                 print(f"{loss_name}: {drawing_model.losses[loss_name].item()}")
-
-        #         with torch.no_grad():
-        #             pydiffvg.imwrite(
-        #                 drawing_model.img, 'results/' + time_str + '.png', gamma=1,
-        #             )
-        #             im_norm = drawing_model.img_features / drawing_model.img_features.norm(
-        #                 dim=-1, keepdim=True
-        #             )
-        #             noun_norm = (
-        #                 drawing_model.nouns_features
-        #                 / drawing_model.nouns_features.norm(dim=-1, keepdim=True)
-        #             )
-        #             similarity = (100.0 * im_norm @ noun_norm.T).softmax(dim=-1)
-        #             values, indices = similarity[0].topk(5)
-        #             print("\nTop predictions:\n")
-        #             for value, index in zip(values, indices):
+        # Print stuff
+        # if t % 50 == 0:
+        #     print(f"Iteration {t}")
+        #     for loss_name in drawing_model.losses:
+        #         if loss_name == 'geometric':
+        #             for gl_name in drawing_model.losses[loss_name]:
         #                 print(
-        #                     f"{drawing_model.nouns[index]:>16s}: {100 * value.item():.2f}%"
+        #                     f'geo loss {gl_name}: {drawing_model.losses[loss_name][gl_name].item()}'
         #                 )
+        #         else:
+        #             print(f"{loss_name}: {drawing_model.losses[loss_name].item()}")
+
+            
+        #         im_norm = drawing_model.img_features / drawing_model.img_features.norm(
+        #             dim=-1, keepdim=True
+        #         )
+        #         noun_norm = (
+        #             drawing_model.nouns_features
+        #             / drawing_model.nouns_features.norm(dim=-1, keepdim=True)
+        #         )
+        #         similarity = (100.0 * im_norm @ noun_norm.T).softmax(dim=-1)
+        #         values, indices = similarity[0].topk(5)
+        #         print("\nTop predictions:\n")
+        #         for value, index in zip(values, indices):
+        #             print(
+        #                 f"{drawing_model.nouns[index]:>16s}: {100 * value.item():.2f}%"
+        #             )
 
         utils.printProgressBar(
             t + 1, args.num_iter, drawing_model.losses['global'].item()
