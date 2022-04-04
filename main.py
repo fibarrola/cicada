@@ -25,13 +25,12 @@ for trial in range(args.num_trials):
     # Run the main optimization loop
     for t in range(args.num_iter):
 
-        if t == args.num_iter//2:
-            args.w_geo = 3.
+        if t == args.num_iter // 2:
+            args.w_geo = 3.0
             with torch.no_grad():
                 pydiffvg.imwrite(
                     drawing_model.img, 'results/' + time_str + '_1.png', gamma=1,
                 )
-
 
         drawing_model.run_epoch(t, args)
 
@@ -47,7 +46,6 @@ for trial in range(args.num_trials):
         #         else:
         #             print(f"{loss_name}: {drawing_model.losses[loss_name].item()}")
 
-            
         #         im_norm = drawing_model.img_features / drawing_model.img_features.norm(
         #             dim=-1, keepdim=True
         #         )
