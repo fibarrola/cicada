@@ -152,11 +152,11 @@ class DrawingModel:
         loss += args.w_widths * widths_loss
         loss += args.w_img * img_loss
 
-        geo_loss = self.clipConvLoss(img, self.img0)
+        geo_loss = self.clipConvLoss(img * self.mask + 1 - self.mask, self.img0)
 
-        # for l_name in geo_loss:
-        #     loss += args.w_geo * geo_loss[l_name]
-        loss += args.w_geo * geo_loss['clip_conv_loss_layer3']
+        for l_name in geo_loss:
+            loss += args.w_geo * geo_loss[l_name]
+        # loss += args.w_geo * geo_loss['clip_conv_loss_layer3']
 
         if args.w_geo_p > 0:
             img_p = self.build_img(
