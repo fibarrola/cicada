@@ -25,12 +25,12 @@ for trial in range(args.num_trials):
     # Run the main optimization loop
     for t in range(args.num_iter):
 
-        if t == args.num_iter // 2:
-            args.w_geo = 3.0
-            with torch.no_grad():
-                pydiffvg.imwrite(
-                    drawing_model.img, 'results/' + time_str + '_1.png', gamma=1,
-                )
+        # if t == args.num_iter // 2:
+        #     args.w_geo = 3.0
+        #     with torch.no_grad():
+        #         pydiffvg.imwrite(
+        #             drawing_model.img, 'results/' + time_str + '_1.png', gamma=1,
+        #         )
 
         drawing_model.run_epoch(t, args)
 
