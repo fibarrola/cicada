@@ -1,3 +1,4 @@
+from importlib.metadata import requires
 from src import utils
 from src.loss import CLIPConvLoss2
 from src.processing import get_augment_trans
@@ -38,7 +39,7 @@ class DrawingModel:
             self.text_features_neg1 = self.model.encode_text(text_input_neg1)
             self.text_features_neg2 = self.model.encode_text(text_input_neg2)
 
-    def initialize_variables(self, args):
+    def initialize_shapes(self, args):
         self.canvas_w = args.canvas_w
         self.canvas_h = args.canvas_h
         shapes_sketch, shape_groups_sketch = render_save_img(
@@ -56,6 +57,7 @@ class DrawingModel:
         self.num_sketch_paths = len(shapes_sketch)
         self.augment_trans = get_augment_trans(args.canvas_w, args.normalize_clip)
 
+    def initialize_variables(self, args):
         self.points_vars = []
         self.stroke_width_vars = []
         self.color_vars = []
@@ -95,6 +97,46 @@ class DrawingModel:
         img = img[:, :, :3].unsqueeze(0).permute(0, 3, 1, 2)  # NHWC -> NCHW
         return img
 
+
+    def prune(self, args, p):
+        with torch.no_grad():
+            losses = []
+            for k in range(self.num_sketch_paths, len(self.stroke_width_vars)):
+                shapes = self.shapes[:k]+self.shapes[k+1:]
+                shape_groups = add_shape_groups(self.shape_groups[:k],self.shape_groups[k+1:])
+                # color_aux = self.color_vars[k].clone()
+                # self.color_vars[k] = torch.zeros(4)
+                img = self.build_img(self.shapes, self.shape_groups, 5)
+                img_augs = []
+                for n in range(args.num_augs):
+                    img_augs.append(self.augment_trans(img))
+                im_batch = torch.cat(img_augs)
+                img_features = self.model.encode_image(im_batch)
+                loss = 0 
+                for n in range(args.num_augs):
+                    loss -= torch.cosine_similarity(self.text_features, img_features[n : n + 1], dim=1)
+                losses.append(loss.cpu().item())
+                # self.color_vars[k] = color_aux
+            inds = utils.k_max_elements(losses, int((1-p)*args.num_paths))
+
+            print(losses)
+            shapes_to_keep = []
+            shape_groups_to_keep = []
+            for k in inds:
+                shapes_to_keep.append(self.shapes[self.num_sketch_paths+k])
+                shape_groups_to_keep.append(self.shape_groups[self.num_sketch_paths+k])
+
+            self.shapes = self.shapes[:self.num_sketch_paths]+shapes_to_keep
+            self.shape_groups = add_shape_groups(self.shape_groups[:self.num_sketch_paths], shape_groups_to_keep)
+        
+        self.initialize_variables(args)
+        
+            # for k in inds:
+            #     self.stroke_width_vars[self.num_sketch_paths+k] *= 0.
+            #     self.stroke_width_vars[self.num_sketch_paths+k] = torch.tensor(0., requires_grad = False)
+        #     self.color_vars[self.num_sketch_paths+k] 
+        # self.color_optim = torch.optim.Adam(self.color_vars)
+
     def run_epoch(self, t, args):
         self.points_optim.zero_grad()
         self.width_optim.zero_grad()
@@ -129,7 +171,7 @@ class DrawingModel:
                     * 0.3
                 )
                 loss += (
-                    torch.cosine_similarity(
+                    torch.cosine_similarity(    
                         self.text_features_neg2, img_features[n : n + 1], dim=1
                     )
                     * 0.3
@@ -152,7 +194,7 @@ class DrawingModel:
         loss += args.w_widths * widths_loss
         loss += args.w_img * img_loss
 
-        geo_loss = self.clipConvLoss(img * self.mask + 1 - self.mask, self.img0)
+        geo_loss = self.clipConvLoss(img*self.mask + 1-self.mask, self.img0)
 
         for l_name in geo_loss:
             loss += args.w_geo * geo_loss[l_name]
