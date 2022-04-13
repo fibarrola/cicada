@@ -14,19 +14,19 @@ from src.style import VGG
 # Parameters
 params = lambda: None
 # params.svg_path: ''
-params.clip_prompt = 'A dog on a boat.'
-params.neg_prompt = 'A dog.'
-params.neg_prompt_2 = 'Many ugly, messy drawings.'
-params.use_neg_prompts = False
+params.clip_prompt = 'The Sydney Opera by the sea.'
+params.neg_prompt = 'Written text.'
+params.neg_prompt_2 = 'Many messy scribbles.'
+params.use_neg_prompts = True
 params.normalize_clip = True
 params.num_paths = 512
 params.canvas_h = 224
 params.canvas_w = 224
 params.num_iter = 2000
 params.max_width = 40
-params.num_trials = 1
+params.num_trials = 10
 
-versions.getinfo()
+versions.getinfo(showme=False)
 device = torch.device('cuda:0')
 
 style_model = VGG().to(device).eval()
@@ -191,9 +191,17 @@ for trial in range(params.num_trials):
 
                 # top_prediction_list[trial] = [nouns[indices[0]], values[0].item()]
 
+    img = render(1024, 1024, 2, 2, t, None, *scene_args)
+    img = img[:, :, 3:4] * img[:, :, :3] + torch.ones(
+        img.shape[0], img.shape[1], 3, device=pydiffvg.get_device()
+    ) * (1 - img[:, :, 3:4])
+
+    img = img[:, :, :3]
+    img = img.unsqueeze(0)
+    img = img.permute(0, 3, 1, 2)
     pydiffvg.imwrite(
         img.cpu().permute(0, 2, 3, 1).squeeze(0),
-        'results/' + time_str + '.png',
+        'results/' + time_str + '_1024.png',
         gamma=1,
     )
 

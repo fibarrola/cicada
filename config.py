@@ -6,7 +6,7 @@ parser = argparse.ArgumentParser(description='Sketching Agent Args')
 parser.add_argument("--svg_path", type=str, help="path to svg partial sketch", default="data/drawing_chair.svg")
 
 # CLIP prompts
-parser.add_argument("--clip_prompt", type=str, help="what to draw", default="A drawing of a red chair.")
+parser.add_argument("--clip_prompt", type=str, help="what to draw", default="A red chair.")
 parser.add_argument("--neg_prompt", type=str, default="A badly drawn sketch.")
 parser.add_argument("--neg_prompt_2", type=str, default="Many ugly, messy drawings.")
 parser.add_argument("--use_neg_prompts", type=bool, default=False)
@@ -16,7 +16,7 @@ parser.add_argument("--normalize_clip", type=bool, default=True)
 parser.add_argument("--num_paths", type=int, help="number of strokes to add", default=32)
 parser.add_argument("--canvas_h", type=int, help="canvas height", default=224)
 parser.add_argument("--canvas_w", type=int, help="canvas width", default=224)
-parser.add_argument("--max_width", type=int, help="max px width", default=40)
+parser.add_argument("--max_width", type=int, help="max px width", default=60)
 
 # Algorithm parameters
 parser.add_argument("--num_iter", type=int, help="maximum algorithm iterations", default=1500)

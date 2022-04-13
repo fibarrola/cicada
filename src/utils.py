@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 
 
 def save_data(time_str, params):
@@ -66,3 +67,10 @@ def printProgressBar(
     # Print New Line on Complete
     if iteration == total:
         print()
+
+
+def k_min_elements(X, K):
+    return np.argsort(X)[:K]
+
+def k_max_elements(X, K):
+    return np.argsort(X)[K:]

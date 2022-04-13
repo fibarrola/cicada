@@ -55,6 +55,11 @@ for i in range(3):
     print(' ')
 
 
+
+print(' ')
+print(' ')
+print(' ')
+
 path = f'data/positions/position_0.png'
 img = image_loader(path).squeeze(0)
 img = img.permute(1, 2, 0)
@@ -86,3 +91,36 @@ for position in range(4):
     print(string)
 
 print(' ')
+print(' ')
+print(' ')
+
+path = f'data/positions/duck_bot_left.png'
+img = image_loader(path).squeeze(0)
+img = img.permute(1, 2, 0)
+img = img[:, :, 3:4] * img[:, :, :3] + torch.ones(
+    img.shape[0], img.shape[1], 3, device=device
+) * (1 - img[:, :, 3:4])
+img0 = img.permute(2, 1, 0).unsqueeze(0).to(device).clone()
+
+for im_name in ['duck_center_center', 'duck_top_right']:
+    path = f'data/positions/{im_name}.png'
+    img = image_loader(path).squeeze(0)
+    img = img.permute(1, 2, 0)
+    img = img[:, :, 3:4] * img[:, :, :3] + torch.ones(
+        img.shape[0], img.shape[1], 3, device=device
+    ) * (1 - img[:, :, 3:4])
+    loss = clipConvLoss(img.permute(2, 1, 0).unsqueeze(0).to(device), img0)
+    losses = [
+        '\\'
+        + 'textcolor{'
+        + colors[c]
+        + '}{'
+        + '{loss:1.4f}'.format(loss=loss[l].item())
+        + '}, '
+        for c, l in enumerate(loss)
+    ]
+    string = ''
+    for l in losses:
+        string += l
+    print(string)
+    print(torch.norm(img.permute(2, 1, 0).unsqueeze(0).to(device)-img0))
