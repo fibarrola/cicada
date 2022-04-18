@@ -33,6 +33,9 @@ parser.add_argument("--y1", type=float, help="coordinate for drawing area", defa
 parser.add_argument("--num_trials", type=int, help="number of times to run the algorithm", default=1)
 parser.add_argument("--num_augs", type=int, help="number of augmentations for computing semantic loss", default=4)
 
+# Saving
+parser.add_argument("--dir", type=str, help="subfolder for saving results", default="")
+
 args = parser.parse_args()
 
 args.drawing_area = {

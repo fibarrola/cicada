@@ -28,27 +28,27 @@ for trial in range(args.num_trials):
         if (t+1) % args.num_iter // 20:
             with torch.no_grad():
                 pydiffvg.imwrite(
-                    drawing_model.img, 'results/' + time_str + '.png', gamma=1,
+                    drawing_model.img, 'results/' + args.dir + time_str + '.png', gamma=1,
                 )
 
         drawing_model.run_epoch(t, args)
 
-        if t == args.num_iter//2:
-            with torch.no_grad():
-                pydiffvg.imwrite(
-                    drawing_model.img, 'results/' + time_str + '_preP.png', gamma=1,
-                )
-                print(drawing_model.stroke_width_vars[-4:])
-                print(drawing_model.color_vars[-4:])
-            drawing_model.prune(args, 0.5)
+        # if t == args.num_iter//2:
+        #     with torch.no_grad():
+        #         pydiffvg.imwrite(
+        #             drawing_model.img, 'results/' + time_str + '_preP.png', gamma=1,
+        #         )
+        #         print(drawing_model.stroke_width_vars[-4:])
+        #         print(drawing_model.color_vars[-4:])
+        #     drawing_model.prune(args, 0.5)
 
-        if t == args.num_iter//2+1:
-            with torch.no_grad():
-                pydiffvg.imwrite(
-                    drawing_model.img, 'results/' + time_str + 'postP.png', gamma=1,
-                )
-                print(drawing_model.stroke_width_vars[-4:])
-                print(drawing_model.color_vars[-4:])
+        # if t == args.num_iter//2+1:
+        #     with torch.no_grad():
+        #         pydiffvg.imwrite(
+        #             drawing_model.img, 'results/' + time_str + 'postP.png', gamma=1,
+        #         )
+        #         print(drawing_model.stroke_width_vars[-4:])
+        #         print(drawing_model.color_vars[-4:])
 
         # Print stuff
         # if t % 50 == 0:
@@ -82,7 +82,7 @@ for trial in range(args.num_trials):
         )
 
     pydiffvg.imwrite(
-        drawing_model.img, 'results/' + time_str + '.png', gamma=1,
+        drawing_model.img, 'results/' + args.dir + time_str + '.png', gamma=1,
     )
     print(' ')
     print(drawing_model.stroke_width_vars[-4:])
