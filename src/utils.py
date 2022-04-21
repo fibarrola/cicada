@@ -72,5 +72,6 @@ def printProgressBar(
 def k_min_elements(X, K):
     return np.argsort(X)[:K]
 
+
 def k_max_elements(X, K):
     return np.argsort(X)[K:]
