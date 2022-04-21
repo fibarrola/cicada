@@ -55,7 +55,6 @@ for i in range(3):
     print(' ')
 
 
-
 print(' ')
 print(' ')
 print(' ')
@@ -123,4 +122,4 @@ for im_name in ['duck_center_center', 'duck_top_right']:
     for l in losses:
         string += l
     print(string)
-    print(torch.norm(img.permute(2, 1, 0).unsqueeze(0).to(device)-img0))
+    print(torch.norm(img.permute(2, 1, 0).unsqueeze(0).to(device) - img0))
