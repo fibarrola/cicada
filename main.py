@@ -41,17 +41,13 @@ for trial in range(args.num_trials):
                 pydiffvg.imwrite(
                     drawing_model.img, 'results/' + time_str + '_preP.png', gamma=1,
                 )
-                print(drawing_model.stroke_width_vars[-4:])
-                print(drawing_model.color_vars[-4:])
             drawing_model.prune(args, 0.5)
 
         if t == round(args.num_iter * 0.8) + 1:
             with torch.no_grad():
                 pydiffvg.imwrite(
-                    drawing_model.img, 'results/' + time_str + 'postP.png', gamma=1,
+                    drawing_model.img, 'results/' + time_str + '_postP.png', gamma=1,
                 )
-                print(drawing_model.stroke_width_vars[-4:])
-                print(drawing_model.color_vars[-4:])
 
         # Print stuff
         # if t % 50 == 0:
@@ -87,9 +83,6 @@ for trial in range(args.num_trials):
     pydiffvg.imwrite(
         drawing_model.img, 'results/' + args.dir + time_str + '.png', gamma=1,
     )
-    print(' ')
-    print(drawing_model.stroke_width_vars[-4:])
-    print(drawing_model.color_vars[-4:])
     utils.save_data(time_str, args)
 
 time_sec = round(time.time() - t0)
