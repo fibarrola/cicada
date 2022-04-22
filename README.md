@@ -9,24 +9,28 @@ $ python3 main.py
 The following options can be used to change the default parameters
 
 ```
---svg_path SVG_PATH         path to svg partial sketch
---clip_prompt CLIP_PROMPT   what to draw
---neg_prompt NEG_PROMPT
---neg_prompt_2 NEG_PROMPT_2
---use_neg_prompts USE_NEG_PROMPTS
---normalize_clip NORMALIZE_CLIP
---num_paths NUM_PATHS       number of strokes to add
---canvas_h CANVAS_H         canvas height
---canvas_w CANVAS_W         canvas width
---max_width MAX_WIDTH       max px width
---num_iter NUM_ITER         maximum algorithm iterations
---w_points W_POINTS         regularization parameter for Bezier point distance
---w_colors W_COLORS         regularization parameter for color differences
---w_widths W_WIDTHS         regularization parameter for width differences
---w_img W_IMG               regularization parameter for image L2 similarity
---x0 X0                     coordinate for drawing area
---x1 X1                     coordinate for drawing area
---y0 Y0                     coordinate for drawing area
---y1 Y1                     coordinate for drawing area
---num_trials NUM_TRIALS     number of times to run the algorithm
+--svg_path <str>            path to svg partial sketch
+--clip_prompt <str>         what to draw
+--neg_prompt <str>
+--neg_prompt_2 <str>
+--use_neg_prompts <bool>
+--normalize_clip <bool>
+--num_paths <int>           number of strokes to add
+--canvas_h <int>            canvas height
+--canvas_w <int>            canvas width
+--max_width <int>           max px width
+--num_iter <int>            maximum algorithm iterations
+--w_points <float>          regularization parameter for Bezier point distance
+--w_colors <float>          regularization parameter for color differences
+--w_widths <float>          regularization parameter for width differences
+--w_img <float>             regularization parameter for image L2 similarity
+--w_geo <float>             regularization parameter for geometric similarity
+--x0 <float>                coordinate for drawing area
+--x1 <float>                coordinate for drawing area
+--y0 <float>                coordinate for drawing area
+--y1 <float>                coordinate for drawing area
+--num_trials <int>          number of times to run the algorithm
+--num_augs <int>            number of augmentations for computing semantic loss
+--prune_ratio <float>       ratio of paths to be pruned out
+--dir <str>                 subfolder for saving results
 ```

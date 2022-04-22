@@ -148,7 +148,9 @@ class DrawingModel:
                 if len(drawn_points) > 0
                 else losses
             )
-            inds = utils.k_max_elements(scores, int((1 - args.prune_ratio) * args.num_paths))
+            inds = utils.k_max_elements(
+                scores, int((1 - args.prune_ratio) * args.num_paths)
+            )
 
             shapes_to_keep = []
             shape_groups_to_keep = []
@@ -227,16 +229,6 @@ class DrawingModel:
         for l_name in geo_loss:
             loss += args.w_geo * geo_loss[l_name]
         # loss += args.w_geo * geo_loss['clip_conv_loss_layer3']
-
-        if args.w_geo_p > 0:
-            img_p = self.build_img(
-                self.shapes[: self.num_sketch_paths],
-                self.shape_groups[: self.num_sketch_paths],
-                t,
-            )
-            geo_loss = self.clipConvLoss(img_p, self.img0)
-            for l_name in geo_loss:
-                loss += args.w_geo_p * geo_loss[l_name]
 
         # Backpropagate the gradients.
         loss.backward()
