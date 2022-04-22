@@ -105,25 +105,28 @@ class DrawingModel:
                     for i, x in enumerate(self.shapes[k].points)
                     if i % 3 == 0
                 ]
-            drawn_points = torch.cat(drawn_points, 0)
+            drawn_points = (
+                torch.cat(drawn_points, 0) if self.num_sketch_paths > 0 else None
+            )
 
             losses = []
             dists = []
             for k in range(self.num_sketch_paths, len(self.stroke_width_vars)):
 
                 # Compute the distance between the set of user's partial sketch points and random curve points
-                points = [
-                    x.unsqueeze(0)
-                    for i, x in enumerate(self.shapes[k].points)
-                    if i % 3 == 0
-                ]  # only points the path goes through
-                min_dists = []
-                for point in points:
-                    d = torch.norm(point - drawn_points, dim=1)
-                    d = min(d)
-                    min_dists.append(d.item())
+                if drawn_points:
+                    points = [
+                        x.unsqueeze(0)
+                        for i, x in enumerate(self.shapes[k].points)
+                        if i % 3 == 0
+                    ]  # only points the path goes through
+                    min_dists = []
+                    for point in points:
+                        d = torch.norm(point - drawn_points, dim=1)
+                        d = min(d)
+                        min_dists.append(d.item())
 
-                dists.append(min(min_dists))
+                    dists.append(min(min_dists))
 
                 # Compute the loss if we take out the k-th path
                 shapes = self.shapes[:k] + self.shapes[k + 1 :]
@@ -143,7 +146,11 @@ class DrawingModel:
                     )
                 losses.append(loss.cpu().item())
 
-            scores = [-0.01 * dists[k] ** (0.5) + losses[k] for k in range(len(losses))]
+            scores = (
+                [-0.01 * dists[k] ** (0.5) + losses[k] for k in range(len(losses))]
+                if drawn_points
+                else losses
+            )
             inds = utils.k_max_elements(scores, int((1 - p) * args.num_paths))
 
             shapes_to_keep = []
