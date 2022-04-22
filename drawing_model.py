@@ -2,9 +2,8 @@ from src import utils
 from src.loss import CLIPConvLoss2
 from src.processing import get_augment_trans
 from src.render_design import (
+    UserSketch,
     add_shape_groups,
-    load_vars,
-    render_save_img,
     treebranch_initialization,
 )
 from src.svg_extraction import get_drawing_paths
@@ -41,9 +40,7 @@ class DrawingModel:
     def initialize_shapes(self, args):
         self.canvas_w = args.canvas_w
         self.canvas_h = args.canvas_h
-        shapes_sketch, shape_groups_sketch = render_save_img(
-            self.path_list, args.canvas_w, args.canvas_h
-        )
+        user_sketch = UserSketch(self.path_list, args.canvas_w, args.canvas_h)
         shapes_rnd, shape_groups_rnd = treebranch_initialization(
             self.path_list,
             args.num_paths,
@@ -51,10 +48,11 @@ class DrawingModel:
             args.canvas_h,
             args.drawing_area,
         )
-        self.shapes = shapes_sketch + shapes_rnd
-        self.shape_groups = add_shape_groups(shape_groups_sketch, shape_groups_rnd)
-        self.num_sketch_paths = len(shapes_sketch)
+        self.shapes = user_sketch.shapes + shapes_rnd
+        self.shape_groups = add_shape_groups(user_sketch.shape_groups, shape_groups_rnd)
+        self.num_sketch_paths = len(user_sketch.shapes)
         self.augment_trans = get_augment_trans(args.canvas_w, args.normalize_clip)
+        self.user_sketch = user_sketch
 
     def initialize_variables(self, args):
         self.points_vars = []
@@ -73,12 +71,11 @@ class DrawingModel:
         self.mask = utils.area_mask(args.canvas_w, args.canvas_h, args.drawing_area).to(
             self.device
         )
-        (
-            self.points_vars0,
-            self.stroke_width_vars0,
-            self.color_vars0,
-            self.img0,
-        ) = load_vars()
+        self.user_sketch.init_vars()
+        self.points_vars0 = self.user_sketch.points_vars
+        self.stroke_width_vars0 = self.user_sketch.stroke_width_vars
+        self.color_vars0 = self.user_sketch.color_vars
+        self.img0 = self.user_sketch.img
 
     def initialize_optimizer(self):
         self.points_optim = torch.optim.Adam(self.points_vars, lr=0.5)
@@ -106,7 +103,7 @@ class DrawingModel:
                     if i % 3 == 0
                 ]
             drawn_points = (
-                torch.cat(drawn_points, 0) if self.num_sketch_paths > 0 else None
+                torch.cat(drawn_points, 0) if self.num_sketch_paths > 0 else []
             )
 
             losses = []
@@ -114,7 +111,7 @@ class DrawingModel:
             for k in range(self.num_sketch_paths, len(self.stroke_width_vars)):
 
                 # Compute the distance between the set of user's partial sketch points and random curve points
-                if drawn_points:
+                if len(drawn_points) > 0:
                     points = [
                         x.unsqueeze(0)
                         for i, x in enumerate(self.shapes[k].points)
@@ -148,7 +145,7 @@ class DrawingModel:
 
             scores = (
                 [-0.01 * dists[k] ** (0.5) + losses[k] for k in range(len(losses))]
-                if drawn_points
+                if len(drawn_points) > 0
                 else losses
             )
             inds = utils.k_max_elements(scores, int((1 - p) * args.num_paths))

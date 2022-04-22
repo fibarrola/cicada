@@ -4,6 +4,68 @@ import pickle
 import random
 
 
+class UserSketch:
+    def __init__(self, path_list, canvas_height, canvas_width):
+
+        # Initialize Curves
+        shapes = []
+        shape_groups = []
+
+        # First the ones from my drawing
+        for dpath in path_list:
+            num_control_points = torch.zeros(dpath.num_segments, dtype=torch.int32) + 2
+            points = torch.zeros_like(dpath.path)
+            stroke_width = dpath.width * 100
+            points[:, 0] = canvas_width * dpath.path[:, 0]
+            points[:, 1] = canvas_height * dpath.path[:, 1]
+            path = pydiffvg.Path(
+                num_control_points=num_control_points,
+                points=points,
+                stroke_width=stroke_width,
+                is_closed=False,
+            )
+            shapes.append(path)
+            path_group = pydiffvg.ShapeGroup(
+                shape_ids=torch.tensor([len(shapes) - 1]),
+                fill_color=None,
+                stroke_color=dpath.color,
+            )
+            shape_groups.append(path_group)
+
+        if not path_list:
+            img = torch.ones(
+                (1, 3, canvas_height, canvas_width),
+                device='cuda:0' if torch.cuda.is_available() else 'cpu',
+            )
+        else:
+            scene_args = pydiffvg.RenderFunction.serialize_scene(
+                canvas_width, canvas_height, shapes, shape_groups
+            )
+            render = pydiffvg.RenderFunction.apply
+            img = render(canvas_width, canvas_height, 2, 2, 0, None, *scene_args)
+            img = img[:, :, 3:4] * img[:, :, :3] + torch.ones(
+                img.shape[0], img.shape[1], 3, device=pydiffvg.get_device()
+            ) * (1 - img[:, :, 3:4])
+            img = img[:, :, :3].unsqueeze(0).permute(0, 3, 1, 2)
+
+        self.shapes = shapes
+        self.shape_groups = shape_groups
+        self.img = img
+
+    def init_vars(self):
+        self.points_vars = []
+        self.stroke_width_vars = []
+        self.color_vars = []
+        for path in self.shapes:
+            path.points.requires_grad = True
+            self.points_vars.append(path.points)
+            path.stroke_width.requires_grad = True
+            self.stroke_width_vars.append(path.stroke_width)
+        for group in self.shape_groups:
+            group.stroke_color.requires_grad = True
+            self.color_vars.append(group.stroke_color)
+
+
 def render_save_img(path_list, canvas_height, canvas_width):
 
     # Initialize Curves
