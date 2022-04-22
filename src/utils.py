@@ -2,8 +2,8 @@ import torch
 import numpy as np
 
 
-def save_data(time_str, params):
-    with open('results/' + time_str + '.txt', 'w') as f:
+def save_data(save_path, name, params):
+    with open(save_path + name + '.txt', 'w') as f:
         f.write('I0: ' + params.svg_path + '\n')
         f.write('prompt: ' + str(params.clip_prompt) + '\n')
         f.write('num paths: ' + str(params.num_paths) + '\n')
