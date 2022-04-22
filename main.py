@@ -41,18 +41,20 @@ for trial in range(args.num_trials):
 
         drawing_model.run_epoch(t, args)
 
-        if t == round(args.num_iter * 0.8):
-            with torch.no_grad():
-                pydiffvg.imwrite(
-                    drawing_model.img, save_path + time_str + '_preP.png', gamma=1,
-                )
-            drawing_model.prune(args, 0.5)
+        # Pruning
+        if args.prune_ratio > 0:
+            if t == round(args.num_iter * 0.8):
+                with torch.no_grad():
+                    pydiffvg.imwrite(
+                        drawing_model.img, save_path + time_str + '_preP.png', gamma=1,
+                    )
+                drawing_model.prune(args)
 
-        if t == round(args.num_iter * 0.8) + 1:
-            with torch.no_grad():
-                pydiffvg.imwrite(
-                    drawing_model.img, save_path + time_str + '_postP.png', gamma=1,
-                )
+            if t == round(args.num_iter * 0.8) + 1:
+                with torch.no_grad():
+                    pydiffvg.imwrite(
+                        drawing_model.img, save_path + time_str + '_postP.png', gamma=1,
+                    )
 
         # Print stuff
         # if t % 50 == 0:

@@ -93,7 +93,7 @@ class DrawingModel:
         img = img[:, :, :3].unsqueeze(0).permute(0, 3, 1, 2)  # NHWC -> NCHW
         return img
 
-    def prune(self, args, p):
+    def prune(self, args):
         with torch.no_grad():
             drawn_points = []
             for k in range(self.num_sketch_paths):
@@ -148,7 +148,7 @@ class DrawingModel:
                 if len(drawn_points) > 0
                 else losses
             )
-            inds = utils.k_max_elements(scores, int((1 - p) * args.num_paths))
+            inds = utils.k_max_elements(scores, int((1 - args.prune_ratio) * args.num_paths))
 
             shapes_to_keep = []
             shape_groups_to_keep = []
