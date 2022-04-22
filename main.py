@@ -5,9 +5,16 @@ import datetime
 import time
 from src import versions, utils
 from config import args
+from pathlib import Path
 
 versions.getinfo(showme=False)
 device = torch.device('cuda:0') if torch.cuda.is_available() else 'cpu'
+
+# Build dir if does not exist & make sure using a
+# trailing / or not does not matter
+save_path = Path("results/").joinpath(args.dir)
+save_path.mkdir(parents=True, exist_ok=True)
+save_path = str(save_path) + '/'
 
 drawing_model = DrawingModel(args, device)
 drawing_model.process_text(args)
@@ -29,9 +36,7 @@ for trial in range(args.num_trials):
         if (t + 1) % args.num_iter // 20:
             with torch.no_grad():
                 pydiffvg.imwrite(
-                    drawing_model.img,
-                    'results/' + args.dir + time_str + '.png',
-                    gamma=1,
+                    drawing_model.img, save_path + time_str + '.png', gamma=1,
                 )
 
         drawing_model.run_epoch(t, args)
@@ -39,14 +44,14 @@ for trial in range(args.num_trials):
         if t == round(args.num_iter * 0.8):
             with torch.no_grad():
                 pydiffvg.imwrite(
-                    drawing_model.img, 'results/' + time_str + '_preP.png', gamma=1,
+                    drawing_model.img, save_path + time_str + '_preP.png', gamma=1,
                 )
             drawing_model.prune(args, 0.5)
 
         if t == round(args.num_iter * 0.8) + 1:
             with torch.no_grad():
                 pydiffvg.imwrite(
-                    drawing_model.img, 'results/' + time_str + '_postP.png', gamma=1,
+                    drawing_model.img, save_path + time_str + '_postP.png', gamma=1,
                 )
 
         # Print stuff
@@ -81,9 +86,9 @@ for trial in range(args.num_trials):
         )
 
     pydiffvg.imwrite(
-        drawing_model.img, 'results/' + args.dir + time_str + '.png', gamma=1,
+        drawing_model.img, save_path + time_str + '.png', gamma=1,
     )
-    utils.save_data(time_str, args)
+    utils.save_data(save_path, time_str, args)
 
 time_sec = round(time.time() - t0)
 print(f"Elapsed time: {time_sec//60} min, {time_sec-60*(time_sec//60)} seconds.")

@@ -7,9 +7,9 @@ parser.add_argument("--svg_path", type=str, help="path to svg partial sketch", d
 
 # CLIP prompts
 parser.add_argument("--clip_prompt", type=str, help="what to draw", default="A red chair.")
-parser.add_argument("--neg_prompt", type=str, default="A badly drawn sketch.")
-parser.add_argument("--neg_prompt_2", type=str, default="Many ugly, messy drawings.")
-parser.add_argument("--use_neg_prompts", type=bool, default=False)
+parser.add_argument("--neg_prompt", type=str, default="Written words.")
+parser.add_argument("--neg_prompt_2", type=str, default="Text.")
+parser.add_argument("--use_neg_prompts", type=bool, default=True)
 parser.add_argument("--normalize_clip", type=bool, default=True)
 
 # Canvas parameters
