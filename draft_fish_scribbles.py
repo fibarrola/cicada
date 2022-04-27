@@ -6,8 +6,6 @@ from src import versions, utils
 from src.svg_extraction import get_drawing_paths
 from src.render_design import (
     add_shape_groups,
-    load_vars,
-    render_save_img,
     treebranch_initialization,
 )
 from src.processing import get_augment_trans
@@ -93,7 +91,7 @@ print(' ')
 print(' ')
 print(' ')
 
-path = f'data/positions/duck_bot_left.png'
+path = f'data/positions/cicada_bot_left.png'
 img = image_loader(path).squeeze(0)
 img = img.permute(1, 2, 0)
 img = img[:, :, 3:4] * img[:, :, :3] + torch.ones(
@@ -101,7 +99,7 @@ img = img[:, :, 3:4] * img[:, :, :3] + torch.ones(
 ) * (1 - img[:, :, 3:4])
 img0 = img.permute(2, 1, 0).unsqueeze(0).to(device).clone()
 
-for im_name in ['duck_center_center', 'duck_top_right']:
+for im_name in ['cicada_center_center', 'cicada_top_right']:
     path = f'data/positions/{im_name}.png'
     img = image_loader(path).squeeze(0)
     img = img.permute(1, 2, 0)
@@ -122,4 +120,4 @@ for im_name in ['duck_center_center', 'duck_top_right']:
     for l in losses:
         string += l
     print(string)
-    print(torch.norm(img.permute(2, 1, 0).unsqueeze(0).to(device) - img0))
+    print(torch.norm(img.permute(2, 1, 0).unsqueeze(0).to(device) - img0).item())
