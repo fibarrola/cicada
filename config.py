@@ -32,6 +32,7 @@ parser.add_argument("--y1", type=float, help="coordinate for drawing area", defa
 parser.add_argument("--num_trials", type=int, help="number of times to run the algorithm", default=1)
 parser.add_argument("--num_augs", type=int, help="number of augmentations for computing semantic loss", default=4)
 parser.add_argument("--prune_ratio", type=float, help="ratio of paths to be pruned out", default=0.5)
+parser.add_argument("--n_prunes", type=int, help="number of pruning stages", default=1)
 
 # Saving
 parser.add_argument("--dir", type=str, help="subfolder for saving results", default="")
