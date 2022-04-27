@@ -18,12 +18,14 @@ save_path = str(save_path) + '/'
 
 t0 = time.time()
 
-prune_places = [ round(args.num_iter*(k+1)*0.8/args.n_prunes) for k in range(args.n_prunes) ]
+prune_places = [
+    round(args.num_iter * (k + 1) * 0.8 / args.n_prunes) for k in range(args.n_prunes)
+]
 p0 = args.prune_ratio
 
 for trial in range(args.num_trials):
 
-    args.prune_ratio = p0/len(prune_places)
+    args.prune_ratio = p0 / len(prune_places)
 
     drawing_model = DrawingModel(args, device)
     drawing_model.process_text(args)
@@ -47,19 +49,21 @@ for trial in range(args.num_trials):
 
         drawing_model.run_epoch(t, args)
 
-        # Pruning       
+        # Pruning
         if t in enumerate(prune_places):
             with torch.no_grad():
                 pydiffvg.imwrite(
                     drawing_model.img, save_path + time_str + f'_preP_{t}.png', gamma=1,
                 )
             drawing_model.prune(args)
-            args.prune_ratio += p0/len(prune_places)
+            args.prune_ratio += p0 / len(prune_places)
 
-        if t-1 in prune_places:
+        if t - 1 in prune_places:
             with torch.no_grad():
                 pydiffvg.imwrite(
-                    drawing_model.img, save_path + time_str + f'_postP_{t-1}.png', gamma=1,
+                    drawing_model.img,
+                    save_path + time_str + f'_postP_{t-1}.png',
+                    gamma=1,
                 )
 
         utils.printProgressBar(
