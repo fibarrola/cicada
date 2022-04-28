@@ -50,7 +50,7 @@ for trial in range(args.num_trials):
         drawing_model.run_epoch(t, args)
 
         # Pruning
-        if t in enumerate(prune_places):
+        if t in prune_places:
             with torch.no_grad():
                 pydiffvg.imwrite(
                     drawing_model.img, save_path + time_str + f'_preP_{t}.png', gamma=1,

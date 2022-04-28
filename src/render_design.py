@@ -87,11 +87,13 @@ def treebranch_initialization(
 
     # Get all endpoints within drawing region
     starting_points = []
+    starting_colors = []
     for path in path_list:
         for k in range(path.path.size(0)):
             if k % 3 == 0:
                 if (x0 < path.path[k, 0] < x1) and (y0 < (1 - path.path[k, 1]) < y1):
                     starting_points.append(tuple([x.item() for x in path.path[k]]))
+                    starting_colors.append(path.color)
 
     # If no endpoints in drawing zone, we make everything random
     K1 = round(partition['K1'] * num_paths) if starting_points else 0
@@ -101,6 +103,7 @@ def treebranch_initialization(
     shapes = []
     shape_groups = []
     first_endpoints = []
+    first_colors = []
 
     # Add random curves
     for k in range(num_paths):
@@ -108,14 +111,29 @@ def treebranch_initialization(
         num_control_points = torch.zeros(num_segments, dtype=torch.int32) + 2
         points = []
         if k < K1:
-            p0 = random.choice(starting_points)
+            i0 = random.choice(range(len(starting_points)))
+            p0 = starting_points[i0]
+            color = torch.tensor(
+                [
+                    max(0.0, min(1.0, c + 0.3 * (random.random() - 0.5)))
+                    for c in starting_colors[i0]
+                ]
+            )
         elif k < K2:
-            p0 = random.choice(first_endpoints)
+            i0 = random.choice(range(len(first_endpoints)))
+            p0 = first_endpoints[i0]
+            color = torch.tensor(
+                [
+                    max(0.0, min(1.0, c + 0.3 * (random.random() - 0.5)))
+                    for c in starting_colors[i0]
+                ]
+            )
         else:
             p0 = (
                 random.random() * (x1 - x0) + x0,
                 random.random() * (y1 - y0) + 1 - y1,
             )
+            color = torch.rand(4)
         points.append(p0)
 
         for j in range(num_segments):
@@ -139,6 +157,7 @@ def treebranch_initialization(
 
         if k < K1:
             first_endpoints.append(points[-1])
+            first_colors.append(color)
 
         points = torch.tensor(points)
         points[:, 0] *= canvas_width
@@ -153,9 +172,7 @@ def treebranch_initialization(
         path_group = pydiffvg.ShapeGroup(
             shape_ids=torch.tensor([len(shapes) - 1]),
             fill_color=None,
-            stroke_color=torch.tensor(
-                [random.random(), random.random(), random.random(), random.random()]
-            ),
+            stroke_color=color,
         )
         shape_groups.append(path_group)
 
