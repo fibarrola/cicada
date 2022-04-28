@@ -41,6 +41,12 @@ for trial in range(args.num_trials):
     # Run the main optimization loop
     for t in range(args.num_iter):
 
+        if t == 1:
+            with torch.no_grad():
+                pydiffvg.imwrite(
+                    drawing_model.img, save_path + time_str + '00.png', gamma=1,
+                )
+
         if (t + 1) % args.num_iter // 20:
             with torch.no_grad():
                 pydiffvg.imwrite(
