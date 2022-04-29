@@ -35,7 +35,7 @@ parser.add_argument("--prune_ratio", type=float, help="ratio of paths to be prun
 parser.add_argument("--n_prunes", type=int, help="number of pruning stages", default=1)
 
 # Saving
-parser.add_argument("--dir", type=str, help="subfolder for saving results", default="")
+parser.add_argument("--dir", type=str, help="subfolder for saving results", default="chair")
 
 args = parser.parse_args()
 
