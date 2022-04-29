@@ -125,7 +125,7 @@ def treebranch_initialization(
             color = torch.tensor(
                 [
                     max(0.0, min(1.0, c + 0.3 * (random.random() - 0.5)))
-                    for c in starting_colors[i0]
+                    for c in first_colors[i0]
                 ]
             )
         else:
