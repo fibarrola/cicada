@@ -165,7 +165,7 @@ def treebranch_initialization(
         path = pydiffvg.Path(
             num_control_points=num_control_points,
             points=points,
-            stroke_width=torch.tensor(1.0),
+            stroke_width=torch.tensor(float(random.randint(1, 10)) / 2),
             is_closed=False,
         )
         shapes.append(path)
