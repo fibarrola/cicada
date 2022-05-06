@@ -23,6 +23,8 @@ class DrawingModel:
         self.path_list = get_drawing_paths(args.svg_path)
         self.model, preprocess = clip.load('ViT-B/32', self.device, jit=False)
         self.clipConvLoss = CLIPConvLoss2(self.device)
+        self.canvas_w = args.canvas_w
+        self.canvas_h = args.canvas_h
 
     def process_text(self, args):
         self.nouns, noun_prompts = get_nouns()
@@ -38,9 +40,8 @@ class DrawingModel:
             self.text_features_neg2 = self.model.encode_text(text_input_neg2)
 
     def initialize_shapes(self, args):
-        self.canvas_w = args.canvas_w
-        self.canvas_h = args.canvas_h
-        user_sketch = UserSketch(self.path_list, args.canvas_w, args.canvas_h)
+        user_sketch = UserSketch(args.canvas_w, args.canvas_h)
+        user_sketch.build_shapes(self.path_list)
         shapes_rnd, shape_groups_rnd = treebranch_initialization(
             self.path_list,
             args.num_paths,
@@ -53,6 +54,24 @@ class DrawingModel:
         self.num_sketch_paths = len(user_sketch.shapes)
         self.augment_trans = get_augment_trans(args.canvas_w, args.normalize_clip)
         self.user_sketch = user_sketch
+        self.fixed_inds = []
+
+    def load_shapes(self, args, shapes, shape_groups, fixed_inds):
+        user_sketch = UserSketch(args.canvas_w, args.canvas_h)
+        user_sketch.load_shapes(shapes, shape_groups)
+        shapes_rnd, shape_groups_rnd = treebranch_initialization(
+            self.path_list,
+            args.num_paths,
+            args.canvas_w,
+            args.canvas_h,
+            args.drawing_area,
+        )
+        self.shapes = user_sketch.shapes + shapes_rnd
+        self.shape_groups = add_shape_groups(user_sketch.shape_groups, shape_groups_rnd)
+        self.num_sketch_paths = len(user_sketch.shapes)
+        self.augment_trans = get_augment_trans(args.canvas_w, args.normalize_clip)
+        self.user_sketch = user_sketch
+        self.fixed_inds = fixed_inds
 
     def initialize_variables(self, args):
         self.points_vars = []
@@ -72,9 +91,13 @@ class DrawingModel:
             self.device
         )
         self.user_sketch.init_vars()
-        self.points_vars0 = self.user_sketch.points_vars
-        self.stroke_width_vars0 = self.user_sketch.stroke_width_vars
-        self.color_vars0 = self.user_sketch.color_vars
+        self.points_vars0 = self.points_vars[: self.num_sketch_paths].copy()
+        self.stroke_width_vars0 = self.stroke_width_vars[: self.num_sketch_paths].copy()
+        self.color_vars0 = self.color_vars[: self.num_sketch_paths].copy()
+        for k in range(len(self.color_vars0)):
+            self.points_vars0[k].requires_grad = False
+            self.stroke_width_vars0[k].requires_grad = False
+            self.color_vars0[k].requires_grad = False
         self.img0 = self.user_sketch.img
 
     def initialize_optimizer(self):
@@ -167,6 +190,81 @@ class DrawingModel:
 
         self.initialize_variables(args)
 
+    def get_fixed_paths(self, args, n_keep):
+        with torch.no_grad():
+            drawn_points = []
+            for k in range(self.num_sketch_paths):
+                drawn_points += [
+                    x.unsqueeze(0)
+                    for i, x in enumerate(self.shapes[k].points)
+                    if i % 3 == 0
+                ]
+            drawn_points = (
+                torch.cat(drawn_points, 0) if self.num_sketch_paths > 0 else []
+            )
+
+            losses = []
+            dists = []
+            for k in range(self.num_sketch_paths, len(self.stroke_width_vars)):
+
+                # Compute the distance between the set of user's partial sketch points and random curve points
+                if len(drawn_points) > 0:
+                    points = [
+                        x.unsqueeze(0)
+                        for i, x in enumerate(self.shapes[k].points)
+                        if i % 3 == 0
+                    ]  # only points the path goes through
+                    min_dists = []
+                    for point in points:
+                        d = torch.norm(point - drawn_points, dim=1)
+                        d = min(d)
+                        min_dists.append(d.item())
+
+                    dists.append(min(min_dists))
+
+                # Compute the loss if we take out the k-th path
+                shapes = self.shapes[:k] + self.shapes[k + 1 :]
+                shape_groups = add_shape_groups(
+                    self.shape_groups[:k], self.shape_groups[k + 1 :]
+                )
+                img = self.build_img(shapes, shape_groups, 5)
+                img_augs = []
+                for n in range(args.num_augs):
+                    img_augs.append(self.augment_trans(img))
+                im_batch = torch.cat(img_augs)
+                img_features = self.model.encode_image(im_batch)
+                loss = 0
+                for n in range(args.num_augs):
+                    loss -= torch.cosine_similarity(
+                        self.text_features, img_features[n : n + 1], dim=1
+                    )
+                losses.append(loss.cpu().item())
+
+            scores = (
+                [-losses[k] for k in range(len(losses))]
+                if len(drawn_points) > 0
+                else losses
+            )
+            # scores = (
+            #     [0.01 * dists[k] ** (0.5) - losses[k] for k in range(len(losses))]
+            #     if len(drawn_points) > 0
+            #     else losses
+            # )
+            inds = utils.k_min_elements(scores, n_keep)
+
+            extra_shapes = [self.shapes[idx + self.num_sketch_paths] for idx in inds]
+            extra_shape_groups = [
+                self.shape_groups[idx + self.num_sketch_paths] for idx in inds
+            ]
+
+            shapes = self.user_sketch.shapes + extra_shapes
+            shape_groups = add_shape_groups(
+                self.user_sketch.shape_groups, extra_shape_groups
+            )
+            fixed_inds = list(range(len(self.user_sketch.shapes), len(shapes)))
+
+        return shapes, shape_groups, fixed_inds
+
     def run_epoch(self, t, args):
         self.points_optim.zero_grad()
         self.width_optim.zero_grad()
@@ -211,15 +309,24 @@ class DrawingModel:
         points_loss = 0
         widths_loss = 0
         colors_loss = 0
+        fixed_loss = 0
 
         for k, points0 in enumerate(self.points_vars0):
-            points_loss += torch.norm(self.points_vars[k] - points0)
-            colors_loss += torch.norm(self.color_vars[k] - self.color_vars0[k])
-            widths_loss += torch.norm(
+            if k not in self.fixed_inds:
+                points_loss += torch.norm(self.points_vars[k] - points0)
+                colors_loss += torch.norm(self.color_vars[k] - self.color_vars0[k])
+                widths_loss += torch.norm(
+                    self.stroke_width_vars[k] - self.stroke_width_vars0[k]
+                )
+        for k in self.fixed_inds:
+            fixed_loss += torch.norm(self.points_vars[k] - self.points_vars0[k])
+            fixed_loss += torch.norm(self.color_vars[k] - self.color_vars0[k])
+            fixed_loss += torch.norm(
                 self.stroke_width_vars[k] - self.stroke_width_vars0[k]
             )
 
         loss += args.w_points * points_loss
+        loss += 10 * fixed_loss
         loss += args.w_colors * colors_loss
         loss += args.w_widths * widths_loss
         loss += args.w_img * img_loss

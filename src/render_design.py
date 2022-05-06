@@ -4,8 +4,11 @@ import random
 
 
 class UserSketch:
-    def __init__(self, path_list, canvas_height, canvas_width):
+    def __init__(self, canvas_height, canvas_width):
+        self.canvas_height = canvas_height
+        self.canvas_width = canvas_width
 
+    def build_shapes(self, path_list):
         # Initialize Curves
         shapes = []
         shape_groups = []
@@ -15,8 +18,8 @@ class UserSketch:
             num_control_points = torch.zeros(dpath.num_segments, dtype=torch.int32) + 2
             points = torch.zeros_like(dpath.path)
             stroke_width = dpath.width * 100
-            points[:, 0] = canvas_width * dpath.path[:, 0]
-            points[:, 1] = canvas_height * dpath.path[:, 1]
+            points[:, 0] = self.canvas_width * dpath.path[:, 0]
+            points[:, 1] = self.canvas_height * dpath.path[:, 1]
             path = pydiffvg.Path(
                 num_control_points=num_control_points,
                 points=points,
@@ -33,23 +36,43 @@ class UserSketch:
 
         if not path_list:
             img = torch.ones(
-                (1, 3, canvas_height, canvas_width),
+                (1, 3, self.canvas_height, self.canvas_width),
                 device='cuda:0' if torch.cuda.is_available() else 'cpu',
             )
         else:
             scene_args = pydiffvg.RenderFunction.serialize_scene(
-                canvas_width, canvas_height, shapes, shape_groups
+                self.canvas_width, self.canvas_height, shapes, shape_groups
             )
             render = pydiffvg.RenderFunction.apply
-            img = render(canvas_width, canvas_height, 2, 2, 0, None, *scene_args)
+            img = render(
+                self.canvas_width, self.canvas_height, 2, 2, 0, None, *scene_args
+            )
             img = img[:, :, 3:4] * img[:, :, :3] + torch.ones(
                 img.shape[0], img.shape[1], 3, device=pydiffvg.get_device()
             ) * (1 - img[:, :, 3:4])
             img = img[:, :, :3].unsqueeze(0).permute(0, 3, 1, 2)
-
         self.shapes = shapes
         self.shape_groups = shape_groups
         self.img = img
+
+    def load_shapes(self, shapes, shape_groups):
+        if shapes:
+            with torch.no_grad():
+                scene_args = pydiffvg.RenderFunction.serialize_scene(
+                    self.canvas_width, self.canvas_height, shapes, shape_groups
+                )
+                render = pydiffvg.RenderFunction.apply
+                img = render(
+                    self.canvas_width, self.canvas_height, 2, 2, 0, None, *scene_args
+                )
+                img = img[:, :, 3:4] * img[:, :, :3] + torch.ones(
+                    img.shape[0], img.shape[1], 3, device=pydiffvg.get_device()
+                ) * (1 - img[:, :, 3:4])
+                img = img[:, :, :3].unsqueeze(0).permute(0, 3, 1, 2)
+
+        self.img = img
+        self.shapes = shapes
+        self.shape_groups = shape_groups
 
     def init_vars(self):
         self.points_vars = []
