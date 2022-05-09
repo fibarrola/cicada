@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+import imageio
 
 
 def save_data(save_path, name, params):
@@ -75,3 +76,14 @@ def k_max_elements(X, K):
 
 def k_min_elements(X, K):
     return np.argsort(X)[:K]
+
+
+class GifBuilder:
+    def __init__(self):
+        self.images = []
+
+    def add(self, img):
+        self.images.append((255 * img).detach().type(torch.ByteTensor))
+
+    def build_gif(self, path):
+        imageio.mimsave(f'{path}_movie2.gif', self.images)

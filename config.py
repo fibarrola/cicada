@@ -36,6 +36,7 @@ parser.add_argument("--n_prunes", type=int, help="number of pruning stages", def
 
 # Saving
 parser.add_argument("--dir", type=str, help="subfolder for saving results", default="chair")
+parser.add_argument("--build_gif", type=bool, help="build a gif of the process", default=False)
 
 args = parser.parse_args()
 

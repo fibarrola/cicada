@@ -16,12 +16,16 @@ save_path = Path("results/").joinpath(args.dir)
 save_path.mkdir(parents=True, exist_ok=True)
 save_path = str(save_path) + '/'
 
+
 t0 = time.time()
 
 prune_places = [
     round(args.num_iter * (k + 1) * 0.8 / args.n_prunes) for k in range(args.n_prunes)
 ]
 p0 = args.prune_ratio
+
+
+gif_builder = utils.GifBuilder()
 
 for trial in range(args.num_trials):
 
@@ -52,6 +56,7 @@ for trial in range(args.num_trials):
                 pydiffvg.imwrite(
                     drawing_model.img, save_path + time_str + '.png', gamma=1,
                 )
+                gif_builder.add(drawing_model.img)
 
         drawing_model.run_epoch(t, args)
 
@@ -80,6 +85,10 @@ for trial in range(args.num_trials):
         drawing_model.img, save_path + time_str + '.png', gamma=1,
     )
     utils.save_data(save_path, time_str, args)
+
+
+if args.build_gif:
+    gif_builder.build_gif(save_path + time_str)
 
 time_sec = round(time.time() - t0)
 print(f"Elapsed time: {time_sec//60} min, {time_sec-60*(time_sec//60)} seconds.")

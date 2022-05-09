@@ -6,12 +6,16 @@ from src import utils
 from drawing_model import DrawingModel
 
 NUM_TRIALS = 10
-PROMPT_0 = "A red chair."
-PROMPT_1 = "A blue chair."
+PROMPT_0 = "A slim pot."
+PROMPT_1 = "A shallow pot."
+
+args.svg_path = "data/drawing_pot.svg"
+args.drawing_area = {'x0': args.x0, 'x1': args.x1, 'y0': 0.0, 'y1': 0.5}
+
 
 device = torch.device('cuda:0') if torch.cuda.is_available() else 'cpu'
 
-save_path = Path("results/").joinpath('prompt_changes')
+save_path = Path("results/").joinpath('prompt_changes/pot')
 save_path.mkdir(parents=True, exist_ok=True)
 save_path = str(save_path) + '/'
 
