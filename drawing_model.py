@@ -325,10 +325,10 @@ class DrawingModel:
                 self.stroke_width_vars[k] - self.stroke_width_vars0[k]
             )
 
-        loss += args.w_points * points_loss
+        # loss += args.w_points * points_loss
         loss += 10 * fixed_loss
-        loss += args.w_colors * colors_loss
-        loss += args.w_widths * widths_loss
+        # loss += args.w_colors * colors_loss
+        # loss += args.w_widths * widths_loss
         loss += args.w_img * img_loss
 
         geo_loss = self.clipConvLoss(img * self.mask + 1 - self.mask, self.img0)
