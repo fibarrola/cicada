@@ -11,6 +11,7 @@ import clip
 from src.utils import get_nouns
 import torch
 import pydiffvg
+import copy
 
 pydiffvg.set_print_timing(False)
 pydiffvg.set_use_gpu(torch.cuda.is_available())
@@ -91,14 +92,16 @@ class DrawingModel:
             self.device
         )
         self.user_sketch.init_vars()
-        self.points_vars0 = self.points_vars[: self.num_sketch_paths].copy()
-        self.stroke_width_vars0 = self.stroke_width_vars[: self.num_sketch_paths].copy()
-        self.color_vars0 = self.color_vars[: self.num_sketch_paths].copy()
+        self.points_vars0 = copy.deepcopy(self.points_vars[: self.num_sketch_paths])
+        self.stroke_width_vars0 = copy.deepcopy(
+            self.stroke_width_vars[: self.num_sketch_paths]
+        )
+        self.color_vars0 = copy.deepcopy(self.color_vars[: self.num_sketch_paths])
         for k in range(len(self.color_vars0)):
             self.points_vars0[k].requires_grad = False
             self.stroke_width_vars0[k].requires_grad = False
             self.color_vars0[k].requires_grad = False
-        self.img0 = self.user_sketch.img
+        self.img0 = copy.deepcopy(self.user_sketch.img)
 
     def initialize_optimizer(self):
         self.points_optim = torch.optim.Adam(self.points_vars, lr=0.5)
@@ -245,11 +248,6 @@ class DrawingModel:
                 if len(drawn_points) > 0
                 else losses
             )
-            # scores = (
-            #     [0.01 * dists[k] ** (0.5) - losses[k] for k in range(len(losses))]
-            #     if len(drawn_points) > 0
-            #     else losses
-            # )
             inds = utils.k_min_elements(scores, n_keep)
 
             extra_shapes = [self.shapes[idx + self.num_sketch_paths] for idx in inds]
@@ -264,6 +262,9 @@ class DrawingModel:
             fixed_inds = list(range(len(self.user_sketch.shapes), len(shapes)))
 
         return shapes, shape_groups, fixed_inds
+
+    def add_mask(self):
+        print(self.img0 > 0)
 
     def run_epoch(self, t, args):
         self.points_optim.zero_grad()
@@ -325,10 +326,10 @@ class DrawingModel:
                 self.stroke_width_vars[k] - self.stroke_width_vars0[k]
             )
 
-        # loss += args.w_points * points_loss
+        loss += args.w_points * points_loss
         loss += 10 * fixed_loss
-        # loss += args.w_colors * colors_loss
-        # loss += args.w_widths * widths_loss
+        loss += args.w_colors * colors_loss
+        loss += args.w_widths * widths_loss
         loss += args.w_img * img_loss
 
         geo_loss = self.clipConvLoss(img * self.mask + 1 - self.mask, self.img0)

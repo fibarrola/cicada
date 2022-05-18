@@ -20,9 +20,9 @@ parser.add_argument("--max_width", type=int, help="max px width", default=60)
 
 # Algorithm parameters
 parser.add_argument("--num_iter", type=int, help="maximum algorithm iterations", default=1500)
-parser.add_argument("--w_points", type=float, help="regularization parameter for Bezier point distance", default=0.00001)
-parser.add_argument("--w_colors", type=float, help="regularization parameter for color differences", default=0.00001)
-parser.add_argument("--w_widths", type=float, help="regularization parameter for width differences", default=0.000001)
+parser.add_argument("--w_points", type=float, help="regularization parameter for Bezier point distance", default=0.001)
+parser.add_argument("--w_colors", type=float, help="regularization parameter for color differences", default=0.01)
+parser.add_argument("--w_widths", type=float, help="regularization parameter for width differences", default=0.001)
 parser.add_argument("--w_img", type=float, help="regularization parameter for image L2 similarity", default=0.00)
 parser.add_argument("--w_geo", type=float, help="regularization parameter for geometric similarity", default=3.5)
 parser.add_argument("--x0", type=float, help="coordinate for drawing area", default=0.0)

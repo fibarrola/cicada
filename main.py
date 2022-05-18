@@ -56,7 +56,8 @@ for trial in range(args.num_trials):
                 pydiffvg.imwrite(
                     drawing_model.img, save_path + time_str + '.png', gamma=1,
                 )
-                gif_builder.add(drawing_model.img)
+                if args.build_gif:
+                    gif_builder.add(drawing_model.img)
 
         drawing_model.run_epoch(t, args)
 
