@@ -84,11 +84,31 @@ for n, name in enumerate(names):
                 drawing_model.load_shapes(args, shapes, shape_groups, fixed_inds)
                 drawing_model.initialize_variables(args)
                 new_mask = 1 - torch.floor(drawing_model.img0)
-                drawing_model.mask = torch.ceil(drawing_model.mask + new_mask)
+                # with torch.no_grad():
+                #     pydiffvg.imwrite(
+                #         drawing_model.mask.detach().squeeze(0).permute(1, 2, 0).cpu(),
+                #         save_path + f'mask.png',
+                #         gamma=1,
+                #     )
+                # print(max(drawing_model.mask.reshape(-1)))
+                drawing_model.mask = torch.ceil((drawing_model.mask + new_mask) / 2)
+                # with torch.no_grad():
+                #     pydiffvg.imwrite(
+                #         drawing_model.mask.detach().squeeze(0).permute(1, 2, 0).cpu(),
+                #         save_path + f'mask2.png',
+                #         gamma=1,
+                #     )
+                # print(max(drawing_model.mask.reshape(-1)))
+                # assert False
                 drawing_model.initialize_optimizer()
                 with torch.no_grad():
                     pydiffvg.imwrite(
                         drawing_model.img0.squeeze(0).permute(1, 2, 0).cpu(),
+                        save_path + f'fixe_lines/{trial}.png',
+                        gamma=1,
+                    )
+                    pydiffvg.imwrite(
+                        drawing_model.mask.detach().squeeze(0).permute(1, 2, 0).cpu(),
                         save_path + f'fixe_lines/{trial}.png',
                         gamma=1,
                     )

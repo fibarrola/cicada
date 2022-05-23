@@ -327,7 +327,7 @@ def calculate_fid_given_paths(paths, batch_size, device, dims, num_workers=1):
     return fid_value
 
 
-def main():
+def main(paths=None):
     args = parser.parse_args()
 
     if args.device is None:
@@ -341,10 +341,14 @@ def main():
     else:
         num_workers = args.num_workers
 
+    if not paths:
+        paths = args.path
+
     fid_value = calculate_fid_given_paths(
-        args.path, args.batch_size, device, args.dims, num_workers
+        paths, args.batch_size, device, args.dims, num_workers
     )
     print('FID: ', fid_value)
+    return fid_value
 
 
 def main_within(path):
