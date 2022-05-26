@@ -250,7 +250,9 @@ def calculate_activation_statistics(
     return mu, sigma
 
 
-def compute_statistics_of_path(path, model, batch_size, dims, device, num_workers=1):
+def compute_statistics_of_path(
+    path, model, batch_size, dims, device, rand_sampled_set_dim=None, num_workers=1
+):
     if path.endswith('.npz'):
         with np.load(path) as f:
             m, s = f['mu'][:], f['sigma'][:]
@@ -259,6 +261,10 @@ def compute_statistics_of_path(path, model, batch_size, dims, device, num_worker
         files = sorted(
             [file for ext in IMAGE_EXTENSIONS for file in path.glob('*.{}'.format(ext))]
         )
+        if rand_sampled_set_dim:
+            random.shuffle(files)
+            files = files[:rand_sampled_set_dim]
+
         m, s = calculate_activation_statistics(
             files, model, batch_size, dims, device, num_workers
         )
@@ -317,10 +323,10 @@ def calculate_fid_given_paths(paths, batch_size, device, dims, num_workers=1):
     model = InceptionV3([block_idx]).to(device)
 
     m1, s1 = compute_statistics_of_path(
-        paths[0], model, batch_size, dims, device, num_workers
+        paths[0], model, batch_size, dims, device, None, num_workers
     )
     m2, s2 = compute_statistics_of_path(
-        paths[1], model, batch_size, dims, device, num_workers
+        paths[1], model, batch_size, dims, device, None, num_workers
     )
     fid_value = calculate_frechet_distance(m1, s1, m2, s2)
 
@@ -371,7 +377,7 @@ def main_within(path):
     return fid_value
 
 
-def get_statistics(path):
+def get_statistics(path, rand_sampled_set_dim=None):
     args = parser.parse_args()
     if args.device is None:
         device = torch.device('cuda' if (torch.cuda.is_available()) else 'cpu')
@@ -386,6 +392,12 @@ def get_statistics(path):
     model = InceptionV3([block_idx]).to(device)
 
     m, s = compute_statistics_of_path(
-        path, model, args.batch_size, args.dims, device, num_workers
+        path,
+        model,
+        args.batch_size,
+        args.dims,
+        device,
+        rand_sampled_set_dim,
+        num_workers,
     )
     return m, s

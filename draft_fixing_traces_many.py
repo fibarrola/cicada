@@ -66,7 +66,7 @@ for n, name in enumerate(names):
                 with torch.no_grad():
                     pydiffvg.imwrite(
                         drawing_model.img,
-                        save_path + f'from_scratch/{trial}.png',
+                        save_path + f'from_scratch/{trial+200}.png',
                         gamma=1,
                     )
 
@@ -76,7 +76,9 @@ for n, name in enumerate(names):
                 t + 1, args.num_iter, drawing_model.losses['global'].item()
             )
 
-        if trial < 2:
+        continue
+
+        if trial < 3:
             shapes, shape_groups, fixed_inds = drawing_model.get_fixed_paths(args, 6)
             for gen in range(GENS_PER_TRIAL):
                 drawing_model = DrawingModel(args, device)
@@ -84,32 +86,17 @@ for n, name in enumerate(names):
                 drawing_model.load_shapes(args, shapes, shape_groups, fixed_inds)
                 drawing_model.initialize_variables(args)
                 new_mask = 1 - torch.floor(drawing_model.img0)
-                # with torch.no_grad():
-                #     pydiffvg.imwrite(
-                #         drawing_model.mask.detach().squeeze(0).permute(1, 2, 0).cpu(),
-                #         save_path + f'mask.png',
-                #         gamma=1,
-                #     )
-                # print(max(drawing_model.mask.reshape(-1)))
                 drawing_model.mask = torch.ceil((drawing_model.mask + new_mask) / 2)
-                # with torch.no_grad():
-                #     pydiffvg.imwrite(
-                #         drawing_model.mask.detach().squeeze(0).permute(1, 2, 0).cpu(),
-                #         save_path + f'mask2.png',
-                #         gamma=1,
-                #     )
-                # print(max(drawing_model.mask.reshape(-1)))
-                # assert False
                 drawing_model.initialize_optimizer()
                 with torch.no_grad():
                     pydiffvg.imwrite(
                         drawing_model.img0.squeeze(0).permute(1, 2, 0).cpu(),
-                        save_path + f'fixe_lines/{trial}.png',
+                        save_path + f'fixe_lines/{trial+100}.png',
                         gamma=1,
                     )
                     pydiffvg.imwrite(
                         drawing_model.mask.detach().squeeze(0).permute(1, 2, 0).cpu(),
-                        save_path + f'fixe_lines/{trial}.png',
+                        save_path + f'fixe_lines/{trial+100}.png',
                         gamma=1,
                     )
                 for t in range(args.num_iter):
@@ -120,7 +107,7 @@ for n, name in enumerate(names):
                         with torch.no_grad():
                             pydiffvg.imwrite(
                                 drawing_model.img,
-                                save_path + f'gen_trial{trial}/{gen}.png',
+                                save_path + f'gen_trial{trial+100}/{gen}.png',
                                 gamma=1,
                             )
 
@@ -128,17 +115,57 @@ for n, name in enumerate(names):
                         t + 1, args.num_iter, drawing_model.losses['global'].item()
                     )
 
+# for n, name in enumerate(names):
+#     for process_name in ['from_scratch', 'gen_trial0', 'gen_trial1', 'gen_trial100', 'gen_trial101', 'gen_trial102']:
+
+#         mu, S = get_statistics(f"results/fix_paths/{name}/{process_name}")
+#         fids = []
+#         for it in range(5):
+#             fids.append(main_within(f"results/fix_paths/{name}/{process_name}"))
+#         textfile.write(f"object: {name} \n")
+#         textfile.write(f"process: {process_name} \n")
+#         textfile.write(f" mean= {np.mean(fids)}, stdev= {np.std(fids)} \n")
+#         textfile.write(f"cov norm = {np.linalg.norm(S)} \n")
+#         textfile.write("\n")
+
+# textfile.close()
+
+import pandas as pd
+import src.fid_score as fid
+import plotly.express as px
+
+fid_data = []
+fid_data2 = []
 for n, name in enumerate(names):
-    for process_name in ['from_scratch', 'gen_trial0', 'gen_trial1']:
-
+    for process_name in [
+        'from_scratch',
+        'gen_trial0',
+        'gen_trial1',
+        'gen_trial100',
+        'gen_trial101',
+        'gen_trial102',
+    ]:
         mu, S = get_statistics(f"results/fix_paths/{name}/{process_name}")
-        fids = []
-        for it in range(5):
-            fids.append(main_within(f"results/fix_paths/{name}/{process_name}"))
-        textfile.write(f"object: {name} \n")
-        textfile.write(f"process: {process_name} \n")
-        textfile.write(f" mean= {np.mean(fids)}, stdev= {np.std(fids)} \n")
-        textfile.write(f"cov norm = {np.linalg.norm(S)} \n")
-        textfile.write("\n")
+        gen_type = 'standard' if process_name == 'from_scratch' else 'trace-conditioned'
+        fid_data.append(
+            {
+                'Covariance Norm': np.linalg.norm(S),
+                'name': name,
+                'generation': gen_type,
+            }
+        )
 
-textfile.close()
+import pickle
+
+with open('results/fix_paths/data.pkl', 'wb') as f:
+    pickle.dump(fid_data, f)
+
+df = pd.DataFrame(fid_data)
+
+fig = px.scatter(
+    df,
+    x="name",
+    y="Covariance Norm",
+    color="generation",  # size=[2 for x in range(len(df))]
+)
+fig.show()
