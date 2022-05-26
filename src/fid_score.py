@@ -250,7 +250,9 @@ def calculate_activation_statistics(
     return mu, sigma
 
 
-def compute_statistics_of_path(path, model, batch_size, dims, device, rand_sampled_set_dim = None, num_workers=1):
+def compute_statistics_of_path(
+    path, model, batch_size, dims, device, rand_sampled_set_dim=None, num_workers=1
+):
     if path.endswith('.npz'):
         with np.load(path) as f:
             m, s = f['mu'][:], f['sigma'][:]
@@ -375,7 +377,7 @@ def main_within(path):
     return fid_value
 
 
-def get_statistics(path, rand_sampled_set_dim = None):
+def get_statistics(path, rand_sampled_set_dim=None):
     args = parser.parse_args()
     if args.device is None:
         device = torch.device('cuda' if (torch.cuda.is_available()) else 'cpu')
@@ -390,6 +392,12 @@ def get_statistics(path, rand_sampled_set_dim = None):
     model = InceptionV3([block_idx]).to(device)
 
     m, s = compute_statistics_of_path(
-        path, model, args.batch_size, args.dims, device, rand_sampled_set_dim, num_workers
+        path,
+        model,
+        args.batch_size,
+        args.dims,
+        device,
+        rand_sampled_set_dim,
+        num_workers,
     )
     return m, s
