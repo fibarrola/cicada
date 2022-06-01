@@ -87,3 +87,10 @@ class GifBuilder:
 
     def build_gif(self, path):
         imageio.mimsave(f'{path}_movie2.gif', self.images)
+
+
+def get_prompt_loss(img_features, text_features, args):
+    loss = 0
+    for n in range(args.num_augs):
+        loss -= torch.cosine_similarity(text_features, img_features[n : n + 1], dim=1)
+    return loss

@@ -35,6 +35,7 @@ prompts_B = [
 ]
 
 for n, name in enumerate(names):
+    continue
 
     args.svg_path = f"data/drawing_{name}.svg"
     args.drawing_area = {'x0': args.x0, 'x1': args.x1, 'y0': yy0[n], 'y1': yy1[n]}
@@ -160,6 +161,14 @@ with open('results/prompt_change/data.pkl', 'wb') as f:
 df = pd.DataFrame(fid_data)
 
 fig = px.scatter(
+    df,
+    x="name",
+    y="Covariance Norm",
+    color="generation",  # size=[2 for x in range(len(df))]
+)
+fig.show()
+
+fig = px.box(
     df,
     x="name",
     y="Covariance Norm",
