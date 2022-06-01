@@ -13,15 +13,15 @@ for n, name in enumerate(names):
         'from_scratch',
         'from_scratch',
         'from_scratch',
-        'gen_trial100',
-        'gen_trial101',
-        'gen_trial102',
-        'gen_trial103',
-        'gen_trial104',
+        'gen_trial0',
+        'gen_trial1',
+        'gen_trial2',
+        'gen_trial3',
+        'gen_trial4',
     ]:
         subset_dim = 20 if process_name == 'from_scratch' else None
         mu, S = fid.get_statistics(
-            f"results/fix_paths2/{name}/{process_name}", rand_sampled_set_dim=subset_dim
+            f"results/fix_paths3/{name}/{process_name}", rand_sampled_set_dim=subset_dim
         )
         gen_type = 'standard' if process_name == 'from_scratch' else 'trace-conditioned'
         fid_data.append(
@@ -34,12 +34,20 @@ for n, name in enumerate(names):
 
 import pickle
 
-with open('results/fix_paths2/data.pkl', 'wb') as f:
+with open('results/fix_paths3/data.pkl', 'wb') as f:
     pickle.dump(fid_data, f)
 
 df = pd.DataFrame(fid_data)
 
 fig = px.scatter(
+    df,
+    x="name",
+    y="Covariance Norm",
+    color="generation",  # size=[2 for x in range(len(df))]
+)
+fig.show()
+
+fig = px.box(
     df,
     x="name",
     y="Covariance Norm",
