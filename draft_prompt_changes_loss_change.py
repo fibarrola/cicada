@@ -16,8 +16,11 @@ device = torch.device('cuda:0') if torch.cuda.is_available() else 'cpu'
 
 
 with open('results/prompt_change/losses.pkl', 'rb') as f:
-    df = pickle.load(f)
+    df_a = pickle.load(f)
+with open('results/prompt_change/losses2.pkl', 'rb') as f:
+    df_b = pickle.load(f)
 
+df = pd.concat([df_a, df_b])
 
 PROMPT_TYPES = ['Old prompt', 'Changed prompt', 'New prompt']
 COLORS = ['rgba(0,170,123,A)', 'rgba(0,83,170,A)', 'rgba(255,157,0,A)']
@@ -54,19 +57,28 @@ for pt, prompt_type in enumerate(PROMPT_TYPES):
     )
     fig.add_trace(
         go.Scatter(
-            x=xx, y=yy, line_color=COLORS[pt].replace('A', '1'), name=prompt_type,
+            x=xx,
+            y=yy,
+            line_color=COLORS[pt].replace('A', '1'),
+            name=prompt_type,
         )
     )
-
+fig.update_traces(mode='lines')
+fig.update_layout(
+    legend={'yanchor': "top", 'y': 0.99, 'xanchor': "right", 'x': 0.99},
+    xaxis_title="iteration",
+    yaxis_title="semantic loss w.r.t. new prompt",
+)
 fig.show()
 
+from scipy import stats
 
-# df_box = df[df['iter'] == max(df['iter'])]
+df_box = df[df['iter'] == max(df['iter']) - 2]
 
-# fig = px.box(
-#     df_box,
-#     x="name",
-#     y="loss",
-#     color="type"
-# )
-# fig.show()
+a = df_box[df_box['type'] == 'Changed prompt']['loss'].to_numpy()
+b = df_box[df_box['type'] == 'New prompt']['loss'].to_numpy()
+
+print(stats.ttest_ind(a, b))
+
+fig = px.box(df_box, x="name", y="loss", color="type")
+fig.show()

@@ -2,6 +2,8 @@ import torch
 import numpy as np
 import imageio
 
+from src.svg_extraction import DrawingPath
+
 
 def save_data(save_path, name, params):
     with open(save_path + name + '.txt', 'w') as f:
@@ -94,3 +96,14 @@ def get_prompt_loss(img_features, text_features, args):
     for n in range(args.num_augs):
         loss -= torch.cosine_similarity(text_features, img_features[n : n + 1], dim=1)
     return loss
+
+
+def shapes2paths(shapes, shape_groups, args):
+    path_list = []
+    for k in range(len(shapes)):
+        path = shapes[k].points / torch.tensor([args.canvas_w, args.canvas_h])
+        num_segments = len(path) // 3
+        width = shapes[k].stroke_width / 100
+        color = shape_groups[k].stroke_color
+        path_list.append(DrawingPath(path, color, width, num_segments))
+    return path_list

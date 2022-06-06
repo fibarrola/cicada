@@ -35,7 +35,7 @@ prompts_B = [
 ]
 
 for n, name in enumerate(names):
-    continue
+    # continue
 
     args.svg_path = f"data/drawing_{name}.svg"
     args.drawing_area = {'x0': args.x0, 'x1': args.x1, 'y0': yy0[n], 'y1': yy1[n]}
@@ -56,7 +56,8 @@ for n, name in enumerate(names):
         ###############################
         drawing_model_A = DrawingModel(args, device)
         drawing_model_A.process_text(args)
-        drawing_model_A.initialize_shapes(args)
+        drawing_model_A.load_svg_shapes(args)
+        drawing_model_A.add_random_shapes(args)
         drawing_model_A.initialize_variables(args)
         drawing_model_A.initialize_optimizer()
 
@@ -116,7 +117,8 @@ for n, name in enumerate(names):
 
         drawing_model_B = DrawingModel(args, device)
         drawing_model_B.process_text(args)
-        drawing_model_B.initialize_shapes(args)
+        drawing_model_B.load_svg_shapes(args)
+        drawing_model_B.add_random_shapes(args)
         drawing_model_B.initialize_variables(args)
         drawing_model_B.initialize_optimizer()
 

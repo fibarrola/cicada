@@ -10,27 +10,14 @@ from drawing_model import DrawingModel
 import numpy as np
 from src.fid_score import main_within, get_statistics
 import copy
+import src.experiment_utils as eu
 
-NUM_TRIALS = 30
-GENS_PER_TRIAL = 20
-NUM_SETS = 5
-
-args.num_iter = 1000
+NUM_TRIALS = 2  # 30
+GENS_PER_TRIAL = 2  # 20
+NUM_SETS = 2  # 5
+args.num_iter = 20  # 1000
 args.w_geo = 10
-textfile = open('results/fixing_traces.txt', 'w')
-
-
-def is_pos_def(A):
-    if np.array_equal(A, A.T):
-        try:
-            np.linalg.cholesky(A)
-            return True
-        except np.linalg.LinAlgError:
-            return False
-    else:
-        return False
-
-
+SAVE_PATH = 'fix_paths4'
 names = ['chair', 'hat', 'lamp', 'pot']
 yy0 = [0.5, 0.6, 0.0, 0.0]
 yy1 = [1.0, 1.0, 0.5, 0.5]
@@ -50,7 +37,7 @@ for n, name in enumerate(names):
 
     device = torch.device('cuda:0') if torch.cuda.is_available() else 'cpu'
 
-    save_path = Path("results/").joinpath(f'fix_paths3/{name}')
+    save_path = Path("results/").joinpath(f'{SAVE_PATH}/{name}')
     save_path.mkdir(parents=True, exist_ok=True)
     save_path = str(save_path) + '/'
 
@@ -58,7 +45,8 @@ for n, name in enumerate(names):
 
         drawing_model = DrawingModel(args, device)
         drawing_model.process_text(args)
-        drawing_model.initialize_shapes(args)
+        drawing_model.load_svg_shapes(args)
+        drawing_model.add_random_shapes(args)
         drawing_model.initialize_variables(args)
         drawing_model.initialize_optimizer()
 
@@ -80,11 +68,17 @@ for n, name in enumerate(names):
             )
 
         if trial < NUM_SETS:
-            shapes, shape_groups, fixed_inds = drawing_model.get_fixed_paths(args, 6)
+            # shapes, shape_groups, fixed_inds = drawing_model.get_fixed_paths(args, 6)
+            shapes, shape_groups, fixed_inds = eu.get_fixed_paths(
+                drawing_model, args, 6
+            )
             for gen in range(GENS_PER_TRIAL):
                 drawing_modelC = DrawingModel(args, device)
                 drawing_modelC.process_text(args)
-                drawing_modelC.load_shapes(args, shapes, shape_groups, fixed_inds)
+                drawing_modelC.load_listed_shapes(
+                    args, shapes, shape_groups, fixed_inds
+                )
+                drawing_modelC.add_random_shapes(args)
                 drawing_modelC.initialize_variables(args)
                 new_mask = 1 - torch.floor(drawing_modelC.img0)
                 drawing_modelC.mask = torch.round(

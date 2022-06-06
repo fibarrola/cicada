@@ -15,9 +15,10 @@ device = torch.device('cuda:0') if torch.cuda.is_available() else 'cpu'
 
 NUM_SETS = 7
 NUM_STD = 7
-args.num_iter = 750
+NUM_ITER = 750
 
-names = ['chair']  # , 'hat', 'lamp', 'pot']
+
+names = ['chair', 'hat', 'lamp', 'pot']
 yy0 = [0.5, 0.6, 0.0, 0.0]
 yy1 = [1.0, 1.0, 0.5, 0.5]
 prompts_A = [
@@ -46,21 +47,23 @@ for n, name in enumerate(names):
 
     for trial_set in range(NUM_SETS):
 
-        save_path = Path("results/").joinpath(f'prompt_change/{name}/pA/')
+        save_path = Path("results/").joinpath(f'prompt_change5/{name}/pA/')
         save_path.mkdir(parents=True, exist_ok=True)
-        save_path = Path("results/").joinpath(f'prompt_change/{name}/pAB_{trial_set}/')
+        save_path = Path("results/").joinpath(f'prompt_change5/{name}/pAB_{trial_set}/')
         save_path.mkdir(parents=True, exist_ok=True)
-        save_path = Path("results/").joinpath(f'prompt_change/{name}/pB/')
+        save_path = Path("results/").joinpath(f'prompt_change5/{name}/pB/')
         save_path.mkdir(parents=True, exist_ok=True)
 
         args.clip_prompt = prompts_A[n]
+        args.num_iter = NUM_ITER
 
         ###############################
         # Standard with prompt A ######
         ###############################
         drawing_model_A = DrawingModel(args, device)
         drawing_model_A.process_text(args)
-        drawing_model_A.initialize_shapes(args)
+        drawing_model_A.load_svg_shapes(args)
+        drawing_model_A.add_random_shapes(args)
         drawing_model_A.initialize_variables(args)
         drawing_model_A.initialize_optimizer()
 
@@ -83,7 +86,7 @@ for n, name in enumerate(names):
         # with torch.no_grad():
         #     pydiffvg.imwrite(
         #         drawing_model_A.img,
-        #         f'results/prompt_change/{name}/pA/{trial_set}.png',
+        #         f'results/prompt_change5/{name}/pA/{trial_set}.png',
         #         gamma=1,
         #     )
 
@@ -123,19 +126,20 @@ for n, name in enumerate(names):
         # with torch.no_grad():
         #     pydiffvg.imwrite(
         #         drawing_model_AB.img,
-        #         f'results/prompt_change/{name}/pAB_{trial_set}/{77}.png',
+        #         f'results/prompt_change5/{name}/pAB_{trial_set}/{77}.png',
         #         gamma=1,
         #     )
 
     ###############################
     # Standard with prompt B ######
     ###############################
-    args.num_iter *= 2
+    args.num_iter = 2 * NUM_ITER
     for trial in range(NUM_STD):
 
         drawing_model_B = DrawingModel(args, device)
         drawing_model_B.process_text(args)
-        drawing_model_B.initialize_shapes(args)
+        drawing_model_B.load_svg_shapes(args)
+        drawing_model_B.add_random_shapes(args)
         drawing_model_B.initialize_variables(args)
         drawing_model_B.initialize_optimizer()
 
@@ -157,7 +161,7 @@ for n, name in enumerate(names):
         # with torch.no_grad():
         #     pydiffvg.imwrite(
         #         drawing_model_B.img,
-        #         f'results/prompt_change/{name}/pB/{trial}.png',
+        #         f'results/prompt_change5/{name}/pB/{trial}.png',
         #         gamma=1,
         #     )
 
@@ -165,7 +169,7 @@ for n, name in enumerate(names):
 df = pd.DataFrame(losses)
 print(df)
 
-with open('results/prompt_change/losses2.pkl', 'wb') as f:
+with open('results/prompt_change5/losses2.pkl', 'wb') as f:
     pickle.dump(df, f)
 
 fig = px.scatter(df, x='iter', y='loss', color='type')
