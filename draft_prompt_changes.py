@@ -27,7 +27,8 @@ for trial in range(NUM_TRIALS):
 
     drawing_model = DrawingModel(args, device)
     drawing_model.process_text(args)
-    drawing_model.initialize_shapes(args)
+    drawing_model.load_svg_shapes(args)
+    drawing_model.add_random_shapes(args)
     drawing_model.initialize_variables(args)
     drawing_model.initialize_optimizer()
 
@@ -78,7 +79,8 @@ for trial in range(NUM_TRIALS):
 
     drawing_model = DrawingModel(args, device)
     drawing_model.process_text(args)
-    drawing_model.initialize_shapes(args)
+    drawing_model.load_svg_shapes(args)
+    drawing_model.add_random_shapes(args)
     drawing_model.initialize_variables(args)
     drawing_model.initialize_optimizer()
 

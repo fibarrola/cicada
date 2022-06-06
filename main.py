@@ -38,7 +38,8 @@ for trial in range(args.num_trials):
         "%Y_%m_%d_%H_%M_%S"
     )
 
-    drawing_model.initialize_shapes(args)
+    drawing_model.load_svg_shapes(args)
+    drawing_model.add_random_shapes(args)
     drawing_model.initialize_variables(args)
     drawing_model.initialize_optimizer()
 

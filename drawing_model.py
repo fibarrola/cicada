@@ -8,7 +8,7 @@ from src.render_design import (
 )
 from src.svg_extraction import get_drawing_paths
 import clip
-from src.utils import get_nouns
+from src.utils import get_nouns, shapes2paths
 import torch
 import pydiffvg
 import copy
@@ -21,11 +21,11 @@ pydiffvg.set_device(torch.device('cuda:0') if torch.cuda.is_available() else 'cp
 class DrawingModel:
     def __init__(self, args, device):
         self.device = device
-        self.path_list = get_drawing_paths(args.svg_path)
         self.model, preprocess = clip.load('ViT-B/32', self.device, jit=False)
         self.clipConvLoss = CLIPConvLoss2(self.device)
         self.canvas_w = args.canvas_w
         self.canvas_h = args.canvas_h
+        self.augment_trans = get_augment_trans(args.canvas_w, args.normalize_clip)
 
     def process_text(self, args):
         self.nouns, noun_prompts = get_nouns()
@@ -40,26 +40,29 @@ class DrawingModel:
             self.text_features_neg1 = self.model.encode_text(text_input_neg1)
             self.text_features_neg2 = self.model.encode_text(text_input_neg2)
 
-    def initialize_shapes(self, args):
+    def load_svg_shapes(self, args):
+        '''This will discard all existing shapes'''
+        self.path_list = get_drawing_paths(args.svg_path)
         user_sketch = UserSketch(args.canvas_w, args.canvas_h)
         user_sketch.build_shapes(self.path_list)
-        shapes_rnd, shape_groups_rnd = treebranch_initialization(
-            self.path_list,
-            args.num_paths,
-            args.canvas_w,
-            args.canvas_h,
-            args.drawing_area,
-        )
-        self.shapes = user_sketch.shapes + shapes_rnd
-        self.shape_groups = add_shape_groups(user_sketch.shape_groups, shape_groups_rnd)
+        self.shapes = user_sketch.shapes
+        self.shape_groups = user_sketch.shape_groups
         self.num_sketch_paths = len(user_sketch.shapes)
-        self.augment_trans = get_augment_trans(args.canvas_w, args.normalize_clip)
         self.user_sketch = user_sketch
         self.fixed_inds = []
 
-    def load_shapes(self, args, shapes, shape_groups, fixed_inds):
+    def load_listed_shapes(self, args, shapes, shape_groups, fixed_inds):
+        '''This will discard all existing shapes'''
         user_sketch = UserSketch(args.canvas_w, args.canvas_h)
         user_sketch.load_shapes(shapes, shape_groups)
+        self.shapes = shapes
+        self.shape_groups = shape_groups
+        self.num_sketch_paths = len(user_sketch.shapes)
+        self.user_sketch = user_sketch
+        self.fixed_inds = fixed_inds
+        self.path_list = shapes2paths(self.shapes, self.shape_groups, args)
+
+    def add_random_shapes(self, args):
         shapes_rnd, shape_groups_rnd = treebranch_initialization(
             self.path_list,
             args.num_paths,
@@ -67,12 +70,8 @@ class DrawingModel:
             args.canvas_h,
             args.drawing_area,
         )
-        self.shapes = user_sketch.shapes + shapes_rnd
-        self.shape_groups = add_shape_groups(user_sketch.shape_groups, shape_groups_rnd)
-        self.num_sketch_paths = len(user_sketch.shapes)
-        self.augment_trans = get_augment_trans(args.canvas_w, args.normalize_clip)
-        self.user_sketch = user_sketch
-        self.fixed_inds = fixed_inds
+        self.shapes = self.shapes + shapes_rnd
+        self.shape_groups = add_shape_groups(self.shape_groups, shape_groups_rnd)
 
     def initialize_variables(self, args):
         self.points_vars = []
@@ -192,7 +191,6 @@ class DrawingModel:
             )
 
         self.initialize_variables(args)
-
 
     def run_epoch(self, t, args):
         self.points_optim.zero_grad()
