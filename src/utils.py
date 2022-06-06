@@ -98,12 +98,12 @@ def get_prompt_loss(img_features, text_features, args):
     return loss
 
 
-def shapes2paths(shapes, shape_groups, args):
+def shapes2paths(shapes, shape_groups, tie, args):
     path_list = []
     for k in range(len(shapes)):
         path = shapes[k].points / torch.tensor([args.canvas_w, args.canvas_h])
         num_segments = len(path) // 3
         width = shapes[k].stroke_width / 100
         color = shape_groups[k].stroke_color
-        path_list.append(DrawingPath(path, color, width, num_segments))
+        path_list.append(DrawingPath(path, color, width, num_segments, tie))
     return path_list
