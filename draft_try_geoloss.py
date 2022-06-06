@@ -85,7 +85,11 @@ augment_trans = get_augment_trans(args.canvas_w, args.normalize_clip)
 # Initialize variables
 shapes, shape_groups = render_save_img(path_list, args.canvas_w, args.canvas_h)
 shapes_rnd, shape_groups_rnd = treebranch_initialization(
-    path_list, args.num_paths, args.canvas_w, args.canvas_h, args.drawing_area,
+    path_list,
+    args.num_paths,
+    args.canvas_w,
+    args.canvas_h,
+    args.drawing_area,
 )
 shapes += shapes_rnd
 shape_groups = add_shape_groups(shape_groups, shape_groups_rnd)

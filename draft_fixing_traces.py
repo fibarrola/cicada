@@ -28,7 +28,9 @@ for trial in range(NUM_TRIALS):
         if (t + 1) % args.num_iter // 20:
             with torch.no_grad():
                 pydiffvg.imwrite(
-                    drawing_model.img, save_path + f'_00_{trial}.png', gamma=1,
+                    drawing_model.img,
+                    save_path + f'_00_{trial}.png',
+                    gamma=1,
                 )
 
         if t == args.num_iter // 2:
@@ -55,5 +57,7 @@ for trial in range(NUM_TRIALS):
         if t == args.num_iter // 2 + 1:
             with torch.no_grad():
                 pydiffvg.imwrite(
-                    drawing_model.img, save_path + f'_fix_init_{trial}.png', gamma=1,
+                    drawing_model.img,
+                    save_path + f'_fix_init_{trial}.png',
+                    gamma=1,
                 )

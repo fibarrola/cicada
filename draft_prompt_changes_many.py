@@ -108,10 +108,18 @@ for n, name in enumerate(names):
     pAB = f'results/change_prompt/{name}/pAB'
     pB = f'results/change_prompt/{name}/pB'
     fid_data.append(
-        {'FID': fid.main([pA, pAB]), 'name': name, 'distance': 'to starters',}
+        {
+            'FID': fid.main([pA, pAB]),
+            'name': name,
+            'distance': 'to starters',
+        }
     )
     fid_data.append(
-        {'FID': fid.main([pA, pB]), 'name': name, 'distance': 'to standard',}
+        {
+            'FID': fid.main([pA, pB]),
+            'name': name,
+            'distance': 'to standard',
+        }
     )
 
 df = pd.DataFrame(fid_data)

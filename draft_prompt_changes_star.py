@@ -35,7 +35,7 @@ prompts_B = [
 ]
 
 for n, name in enumerate(names):
-    continue
+    # continue
 
     args.svg_path = f"data/drawing_{name}.svg"
     args.drawing_area = {'x0': args.x0, 'x1': args.x1, 'y0': yy0[n], 'y1': yy1[n]}
