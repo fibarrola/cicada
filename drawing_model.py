@@ -80,6 +80,24 @@ class DrawingModel:
         self.shapes = self.shapes + shapes_rnd
         self.shape_groups = add_shape_groups(self.shape_groups, shape_groups_rnd)
 
+    def remove_traces(self, idx_list, args):
+        '''Remove the traces indexed in idx_list'''
+        self.shapes = [
+            self.shapes[k] for k in range(len(self.shapes)) if k not in idx_list
+        ]
+        self.shape_groups = add_shape_groups(
+            [
+                self.shape_groups[k]
+                for k in range(len(self.shape_groups))
+                if k not in idx_list
+            ],
+            [],
+        )
+        self.path_list = [
+            self.path_list[k] for k in range(len(self.path_list)) if k not in idx_list
+        ]
+        self.initialize_variables(args)
+
     def initialize_variables(self, args):
         self.points_vars = []
         self.stroke_width_vars = []
@@ -122,81 +140,6 @@ class DrawingModel:
         ) * (1 - img[:, :, 3:4])
         img = img[:, :, :3].unsqueeze(0).permute(0, 3, 1, 2)  # NHWC -> NCHW
         return img
-
-    def old_prune(self, args):
-        with torch.no_grad():
-            drawn_points = []
-            for k in range(self.num_sketch_paths):
-                drawn_points += [
-                    x.unsqueeze(0)
-                    for i, x in enumerate(self.shapes[k].points)
-                    if i % 3 == 0
-                ]
-            drawn_points = (
-                torch.cat(drawn_points, 0) if self.num_sketch_paths > 0 else []
-            )
-
-            losses = []
-            dists = []
-
-            for k in range(self.num_sketch_paths, len(self.stroke_width_vars)):
-
-                # Compute the distance between the set of user's partial sketch points and random curve points
-                if len(drawn_points) > 0:
-                    points = [
-                        x.unsqueeze(0)
-                        for i, x in enumerate(self.shapes[k].points)
-                        if i % 3 == 0
-                    ]  # only points the path goes through
-                    min_dists = []
-                    for point in points:
-                        d = torch.norm(point - drawn_points, dim=1)
-                        d = min(d)
-                        min_dists.append(d.item())
-
-                    dists.append(min(min_dists))
-
-                # Compute the loss if we take out the k-th path
-                shapes = self.shapes[:k] + self.shapes[k + 1 :]
-                shape_groups = add_shape_groups(
-                    self.shape_groups[:k], self.shape_groups[k + 1 :]
-                )
-                img = self.build_img(shapes, shape_groups, 5)
-                img_augs = []
-                for n in range(args.num_augs):
-                    img_augs.append(self.augment_trans(img))
-                im_batch = torch.cat(img_augs)
-                img_features = self.model.encode_image(im_batch)
-                loss = 0
-                for n in range(args.num_augs):
-                    loss -= torch.cosine_similarity(
-                        self.text_features, img_features[n : n + 1], dim=1
-                    )
-                losses.append(loss.cpu().item())
-
-            scores = (
-                [-0.01 * dists[k] ** (0.5) + losses[k] for k in range(len(losses))]
-                if len(drawn_points) > 0
-                else losses
-            )
-            inds = utils.k_max_elements(
-                scores, int((1 - args.prune_ratio) * args.num_paths)
-            )
-
-            shapes_to_keep = []
-            shape_groups_to_keep = []
-            for k in inds:
-                shapes_to_keep.append(self.shapes[self.num_sketch_paths + k])
-                shape_groups_to_keep.append(
-                    self.shape_groups[self.num_sketch_paths + k]
-                )
-
-            self.shapes = self.shapes[: self.num_sketch_paths] + shapes_to_keep
-            self.shape_groups = add_shape_groups(
-                self.shape_groups[: self.num_sketch_paths], shape_groups_to_keep
-            )
-
-        self.initialize_variables(args)
 
     def run_epoch(self, t, args):
         self.points_optim.zero_grad()
@@ -283,7 +226,7 @@ class DrawingModel:
             'geometric': geo_loss,
         }
 
-    def prune(self, args):
+    def prune(self, prune_ratio, args):
         with torch.no_grad():
 
             # Get points of tied traces
@@ -345,9 +288,7 @@ class DrawingModel:
             scores = [-0.01 * dists[k] ** (0.5) + losses[k] for k in range(len(losses))]
 
             # Actual pruning
-            inds = utils.k_max_elements(
-                scores, int((1 - args.prune_ratio) * args.num_paths)
-            )
+            inds = utils.k_max_elements(scores, int((1 - prune_ratio) * args.num_paths))
 
             # Define the lists like this because using "for p in inds"
             # may (and often will) change the order of the traces
