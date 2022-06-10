@@ -123,7 +123,7 @@ class DrawingModel:
         img = img[:, :, :3].unsqueeze(0).permute(0, 3, 1, 2)  # NHWC -> NCHW
         return img
 
-    def prune(self, args):
+    def old_prune(self, args):
         with torch.no_grad():
             drawn_points = []
             for k in range(self.num_sketch_paths):
@@ -138,6 +138,7 @@ class DrawingModel:
 
             losses = []
             dists = []
+
             for k in range(self.num_sketch_paths, len(self.stroke_width_vars)):
 
                 # Compute the distance between the set of user's partial sketch points and random curve points
@@ -281,3 +282,84 @@ class DrawingModel:
             'image': img_loss,
             'geometric': geo_loss,
         }
+
+    def prune(self, args):
+        with torch.no_grad():
+
+            # Get points of tied traces
+            tied_points = []
+            for p, path in enumerate(self.path_list):
+                if path.is_tied:
+                    tied_points += [
+                        x.unsqueeze(0)
+                        for i, x in enumerate(self.shapes[p].points)
+                        if i % 3 == 0
+                    ]  # only points the path goes through
+
+            # Compute distances
+            dists = []
+            if tied_points:
+                tied_points = torch.cat(tied_points, 0)
+                for p, path in enumerate(self.path_list):
+                    if path.is_tied:
+                        dists.append(-1000)
+                    else:
+                        points = [
+                            x.unsqueeze(0)
+                            for i, x in enumerate(self.shapes[p].points)
+                            if i % 3 == 0
+                        ]  # only points the path goes through
+                        min_dists = []
+                        for point in points:
+                            d = torch.norm(point - tied_points, dim=1)
+                            d = min(d)
+                            min_dists.append(d.item())
+
+                        dists.append(min(min_dists))
+
+            # Compute losses
+            losses = []
+            for p, path in enumerate(self.path_list):
+                if path.is_tied:
+                    losses.append(1000)
+                else:
+                    # Compute the loss if we take out the k-th path
+                    shapes = self.shapes[:p] + self.shapes[p + 1 :]
+                    shape_groups = add_shape_groups(
+                        self.shape_groups[:p], self.shape_groups[p + 1 :]
+                    )
+                    img = self.build_img(shapes, shape_groups, 5)
+                    img_augs = []
+                    for n in range(args.num_augs):
+                        img_augs.append(self.augment_trans(img))
+                    im_batch = torch.cat(img_augs)
+                    img_features = self.model.encode_image(im_batch)
+                    loss = 0
+                    for n in range(args.num_augs):
+                        loss -= torch.cosine_similarity(
+                            self.text_features, img_features[n : n + 1], dim=1
+                        )
+                    losses.append(loss.cpu().item())
+
+            # Compute scores
+            scores = [-0.01 * dists[k] ** (0.5) + losses[k] for k in range(len(losses))]
+
+            # Actual pruning
+            inds = utils.k_max_elements(
+                scores, int((1 - args.prune_ratio) * args.num_paths)
+            )
+
+            # Define the lists like this because using "for p in inds"
+            # may (and often will) change the order of the traces
+            self.shapes = [
+                self.shapes[p] for p in range(len(self.path_list)) if p in inds
+            ]
+            self.shape_groups = add_shape_groups(
+                [self.shape_groups[p] for p in range(len(self.path_list)) if p in inds],
+                [],
+            )
+            self.path_list = [
+                self.path_list[p] for p in range(len(self.path_list)) if p in inds
+            ]
+
+        self.initialize_variables(args)
