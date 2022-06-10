@@ -47,7 +47,7 @@ for n, name in enumerate(names):
         drawing_model = DrawingModel(args, device)
         drawing_model.process_text(args)
         drawing_model.load_svg_shapes(args)
-        drawing_model.add_random_shapes(args)
+        drawing_model.add_random_shapes(args.num_paths, args)
         drawing_model.initialize_variables(args)
         drawing_model.initialize_optimizer()
 
@@ -85,7 +85,7 @@ for n, name in enumerate(names):
         drawing_model = DrawingModel(args, device)
         drawing_model.process_text(args)
         drawing_model.load_svg_shapes(args)
-        drawing_model.add_random_shapes(args)
+        drawing_model.add_random_shapes(args.num_paths, args)
         drawing_model.initialize_variables(args)
         drawing_model.initialize_optimizer()
 

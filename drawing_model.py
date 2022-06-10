@@ -26,6 +26,10 @@ class DrawingModel:
         self.canvas_w = args.canvas_w
         self.canvas_h = args.canvas_h
         self.augment_trans = get_augment_trans(args.canvas_w, args.normalize_clip)
+        self.shapes = []
+        self.shape_groups = []
+        self.path_list = []
+        self.num_rnd_paths = 0
 
     def process_text(self, args):
         self.nouns, noun_prompts = get_nouns()
@@ -49,26 +53,29 @@ class DrawingModel:
         self.shape_groups = user_sketch.shape_groups
         self.num_sketch_paths = len(user_sketch.shapes)
         self.user_sketch = user_sketch
-        self.fixed_inds = []
 
-    def load_listed_shapes(self, args, shapes, shape_groups, fixed_inds):
-        '''This will discard all existing shapes'''
+    def load_listed_shapes(self, args, shapes, shape_groups, tie=True):
+        '''This will NOT discard existing shapes
+        tie is a boolean indicating whether we penalize w.r.t. the added shapes'''
+        self.path_list += shapes2paths(shapes, shape_groups, tie, args=args)
+        self.shapes += shapes
+        self.shape_groups = add_shape_groups(self.shape_groups, shape_groups)
         user_sketch = UserSketch(args.canvas_w, args.canvas_h)
-        user_sketch.load_shapes(shapes, shape_groups)
-        self.shapes = shapes
-        self.shape_groups = shape_groups
+        user_sketch.build_shapes(self.path_list)
         self.num_sketch_paths = len(user_sketch.shapes)
-        self.user_sketch = user_sketch
-        self.fixed_inds = fixed_inds
-        self.path_list = shapes2paths(self.shapes, self.shape_groups, args)
 
-    def add_random_shapes(self, args):
+    def add_random_shapes(self, num_rnd_paths, args):
+        '''This will NOT discard existing shapes'''
+        self.num_rnd_paths += num_rnd_paths
         shapes_rnd, shape_groups_rnd = treebranch_initialization(
             self.path_list,
-            args.num_paths,
+            num_rnd_paths,
             args.canvas_w,
             args.canvas_h,
             args.drawing_area,
+        )
+        self.path_list += shapes2paths(
+            shapes_rnd, shape_groups_rnd, tie=False, args=args
         )
         self.shapes = self.shapes + shapes_rnd
         self.shape_groups = add_shape_groups(self.shape_groups, shape_groups_rnd)
@@ -91,11 +98,9 @@ class DrawingModel:
             self.device
         )
         self.user_sketch.init_vars()
-        self.points_vars0 = copy.deepcopy(self.points_vars[: self.num_sketch_paths])
-        self.stroke_width_vars0 = copy.deepcopy(
-            self.stroke_width_vars[: self.num_sketch_paths]
-        )
-        self.color_vars0 = copy.deepcopy(self.color_vars[: self.num_sketch_paths])
+        self.points_vars0 = copy.deepcopy(self.points_vars)
+        self.stroke_width_vars0 = copy.deepcopy(self.stroke_width_vars)
+        self.color_vars0 = copy.deepcopy(self.color_vars)
         for k in range(len(self.color_vars0)):
             self.points_vars0[k].requires_grad = False
             self.stroke_width_vars0[k].requires_grad = False
@@ -118,7 +123,7 @@ class DrawingModel:
         img = img[:, :, :3].unsqueeze(0).permute(0, 3, 1, 2)  # NHWC -> NCHW
         return img
 
-    def prune(self, args):
+    def old_prune(self, args):
         with torch.no_grad():
             drawn_points = []
             for k in range(self.num_sketch_paths):
@@ -133,6 +138,7 @@ class DrawingModel:
 
             losses = []
             dists = []
+
             for k in range(self.num_sketch_paths, len(self.stroke_width_vars)):
 
                 # Compute the distance between the set of user's partial sketch points and random curve points
@@ -236,24 +242,16 @@ class DrawingModel:
         points_loss = 0
         widths_loss = 0
         colors_loss = 0
-        fixed_loss = 0
 
-        for k, points0 in enumerate(self.points_vars0):
-            if k not in self.fixed_inds:
-                points_loss += torch.norm(self.points_vars[k] - points0)
+        for k in range(len(self.points_vars)):
+            if self.path_list[k].is_tied:
+                points_loss += torch.norm(self.points_vars[k] - self.points_vars0[k])
                 colors_loss += torch.norm(self.color_vars[k] - self.color_vars0[k])
                 widths_loss += torch.norm(
                     self.stroke_width_vars[k] - self.stroke_width_vars0[k]
                 )
-        for k in self.fixed_inds:
-            fixed_loss += torch.norm(self.points_vars[k] - self.points_vars0[k])
-            fixed_loss += torch.norm(self.color_vars[k] - self.color_vars0[k])
-            fixed_loss += torch.norm(
-                self.stroke_width_vars[k] - self.stroke_width_vars0[k]
-            )
 
         loss += args.w_points * points_loss
-        loss += 10 * fixed_loss
         loss += args.w_colors * colors_loss
         loss += args.w_widths * widths_loss
         loss += args.w_img * img_loss
@@ -284,3 +282,84 @@ class DrawingModel:
             'image': img_loss,
             'geometric': geo_loss,
         }
+
+    def prune(self, args):
+        with torch.no_grad():
+
+            # Get points of tied traces
+            tied_points = []
+            for p, path in enumerate(self.path_list):
+                if path.is_tied:
+                    tied_points += [
+                        x.unsqueeze(0)
+                        for i, x in enumerate(self.shapes[p].points)
+                        if i % 3 == 0
+                    ]  # only points the path goes through
+
+            # Compute distances
+            dists = []
+            if tied_points:
+                tied_points = torch.cat(tied_points, 0)
+                for p, path in enumerate(self.path_list):
+                    if path.is_tied:
+                        dists.append(-1000)
+                    else:
+                        points = [
+                            x.unsqueeze(0)
+                            for i, x in enumerate(self.shapes[p].points)
+                            if i % 3 == 0
+                        ]  # only points the path goes through
+                        min_dists = []
+                        for point in points:
+                            d = torch.norm(point - tied_points, dim=1)
+                            d = min(d)
+                            min_dists.append(d.item())
+
+                        dists.append(min(min_dists))
+
+            # Compute losses
+            losses = []
+            for p, path in enumerate(self.path_list):
+                if path.is_tied:
+                    losses.append(1000)
+                else:
+                    # Compute the loss if we take out the k-th path
+                    shapes = self.shapes[:p] + self.shapes[p + 1 :]
+                    shape_groups = add_shape_groups(
+                        self.shape_groups[:p], self.shape_groups[p + 1 :]
+                    )
+                    img = self.build_img(shapes, shape_groups, 5)
+                    img_augs = []
+                    for n in range(args.num_augs):
+                        img_augs.append(self.augment_trans(img))
+                    im_batch = torch.cat(img_augs)
+                    img_features = self.model.encode_image(im_batch)
+                    loss = 0
+                    for n in range(args.num_augs):
+                        loss -= torch.cosine_similarity(
+                            self.text_features, img_features[n : n + 1], dim=1
+                        )
+                    losses.append(loss.cpu().item())
+
+            # Compute scores
+            scores = [-0.01 * dists[k] ** (0.5) + losses[k] for k in range(len(losses))]
+
+            # Actual pruning
+            inds = utils.k_max_elements(
+                scores, int((1 - args.prune_ratio) * args.num_paths)
+            )
+
+            # Define the lists like this because using "for p in inds"
+            # may (and often will) change the order of the traces
+            self.shapes = [
+                self.shapes[p] for p in range(len(self.path_list)) if p in inds
+            ]
+            self.shape_groups = add_shape_groups(
+                [self.shape_groups[p] for p in range(len(self.path_list)) if p in inds],
+                [],
+            )
+            self.path_list = [
+                self.path_list[p] for p in range(len(self.path_list)) if p in inds
+            ]
+
+        self.initialize_variables(args)

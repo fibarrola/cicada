@@ -3,11 +3,12 @@ from svgpathtools import svg2paths
 
 
 class DrawingPath:
-    def __init__(self, path, color, width, num_segments):
+    def __init__(self, path, color, width, num_segments, is_tied):
         self.path = path
         self.color = color
         self.width = width
         self.num_segments = num_segments
+        self.is_tied = is_tied
 
 
 def get_drawing_paths(path_to_svg_file):
@@ -47,6 +48,6 @@ def get_drawing_paths(path_to_svg_file):
             if k % 3 == 0:
                 v0 = path[k, :]
 
-        path_list.append(DrawingPath(path, color, width, num_segments))
+        path_list.append(DrawingPath(path, color, width, num_segments, True))
 
     return path_list
