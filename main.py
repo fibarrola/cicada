@@ -74,7 +74,7 @@ for trial in range(args.num_trials):
                     save_path + time_str + f'_preP_{t}.png',
                     gamma=1,
                 )
-            drawing_model.prune(args)
+            drawing_model.prune(args.prune_ratio, args)
             args.prune_ratio += p0 / len(prune_places)
 
         if t - 1 in prune_places:
