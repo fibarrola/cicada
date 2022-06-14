@@ -10,6 +10,8 @@ import pandas as pd
 import numpy as np
 import pickle
 import plotly.express as px
+import plotly.graph_objects as go
+
 
 device = torch.device('cuda:0') if torch.cuda.is_available() else 'cpu'
 
@@ -35,7 +37,7 @@ prompts_B = [
 ]
 
 for n, name in enumerate(names):
-    # continue
+    continue
 
     args.svg_path = f"data/drawing_{name}.svg"
     args.drawing_area = {'x0': args.x0, 'x1': args.x1, 'y0': yy0[n], 'y1': yy1[n]}
@@ -157,23 +159,45 @@ for n, name in enumerate(names):
         )
 
 
-with open('results/prompt_change/data.pkl', 'wb') as f:
-    pickle.dump(fid_data, f)
+# with open('results/prompt_change/data.pkl', 'wb') as f:
+#     pickle.dump(fid_data, f)
 
 df = pd.DataFrame(fid_data)
 
-fig = px.scatter(
-    df,
-    x="name",
-    y="Covariance Norm",
-    color="generation",  # size=[2 for x in range(len(df))]
-)
-fig.show()
+# fig = px.scatter(
+#     df,
+#     x="name",
+#     y="Covariance Norm",
+#     color="generation",  # size=[2 for x in range(len(df))]
+# )
+# fig.show()
 
-fig = px.box(
-    df,
-    x="name",
-    y="Covariance Norm",
-    color="generation",  # size=[2 for x in range(len(df))]
+# fig = px.box(
+#     df,
+#     x="name",
+#     y="Covariance Norm",
+#     color="generation",  # size=[2 for x in range(len(df))]
+# )
+# fig.show()
+
+
+fig = go.Figure()
+
+
+xx = df.query('generation=="standard"')['name']
+yy = df.query('generation=="standard"')['Covariance Norm']
+fig.add_trace(go.Box(y=yy, x=xx, name='standard', marker_color='rgba(255,157,0,1)'))
+
+xx = df.query('generation=="prompt-change-conditioned"')['name']
+yy = df.query('generation=="prompt-change-conditioned"')['Covariance Norm']
+fig.add_trace(
+    go.Box(
+        y=yy, x=xx, name='prompt-change-conditioned', marker_color='rgba(0,83,170,1)'
+    )
+)
+
+fig.update_layout(
+    boxmode='group',
+    legend={'yanchor': "top", 'y': 0.99, 'xanchor': "left", 'x': 0.01},
 )
 fig.show()

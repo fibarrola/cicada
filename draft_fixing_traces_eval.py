@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import src.fid_score as fid
 import plotly.express as px
+import plotly.graph_objects as go
 
 names = ['chair', 'hat', 'lamp', 'pot']
 
@@ -52,5 +53,24 @@ fig = px.box(
     x="name",
     y="Covariance Norm",
     color="generation",  # size=[2 for x in range(len(df))]
+)
+fig.show()
+
+fig = go.Figure()
+
+
+xx = df.query('generation=="standard"')['name']
+yy = df.query('generation=="standard"')['Covariance Norm']
+fig.add_trace(go.Box(y=yy, x=xx, name='standard', marker_color='rgba(255,157,0,1)'))
+
+xx = df.query('generation=="trace-conditioned"')['name']
+yy = df.query('generation=="trace-conditioned"')['Covariance Norm']
+fig.add_trace(
+    go.Box(y=yy, x=xx, name='trace-conditioned', marker_color='rgba(0,83,170,1)')
+)
+
+fig.update_layout(
+    boxmode='group',
+    legend={'yanchor': "top", 'y': 0.99, 'xanchor': "left", 'x': 0.01},
 )
 fig.show()
