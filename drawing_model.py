@@ -60,9 +60,9 @@ class DrawingModel:
         self.path_list += shapes2paths(shapes, shape_groups, tie, args=args)
         self.shapes += shapes
         self.shape_groups = add_shape_groups(self.shape_groups, shape_groups)
-        user_sketch = UserSketch(args.canvas_w, args.canvas_h)
-        user_sketch.build_shapes(self.path_list)
-        self.num_sketch_paths = len(user_sketch.shapes)
+        self.user_sketch = UserSketch(args.canvas_w, args.canvas_h)
+        self.user_sketch.build_shapes(self.path_list)
+        self.num_sketch_paths = len(self.user_sketch.shapes)
 
     def add_random_shapes(self, num_rnd_paths, args):
         '''This will NOT discard existing shapes'''
