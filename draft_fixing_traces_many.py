@@ -18,16 +18,24 @@ NUM_SETS = 2  # 5
 args.num_iter = 20  # 1000
 args.w_geo = 10
 SAVE_PATH = 'fix_paths4'
-names = ['chair', 'hat', 'lamp', 'pot']
-yy0 = [0.5, 0.6, 0.0, 0.0]
-yy1 = [1.0, 1.0, 0.5, 0.5]
+names = ['chair', 'hat', 'lamp', 'pot', 'boat', 'dress', 'shoe', 'bust']
+yy0 = [0.5, 0.6, 0.0, 0.0, 0.35, 0.0, 0.0, 0.5]
+yy1 = [1.0, 1.0, 0.5, 0.5, 1.0, 0.5, 0.5, 1.0]
 prompts = [
     'A red chair.',
     'A drawing of a hat.',
     'A drawing of a lamp.',
     'A drawing of a pot.',
+    'A drawing of a boat.',
+    'A blue dress.',
+    'A high-heel shoe.',
+    'A bust.',
 ]
 
+names = names[4:]
+yy0 = yy0[4:]
+yy1 = yy1[4:]
+prompts = prompts[4:]
 
 for n, name in enumerate(names):
 
