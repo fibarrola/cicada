@@ -76,4 +76,9 @@ def get_fixed_paths(drawing_model, args, n_keep):
         )
         fixed_inds = list(range(len(drawing_model.user_sketch.shapes), len(shapes)))
 
+        for s in range(len(shapes)):
+            shapes[s].points.requires_grad = False
+            shapes[s].stroke_width.requires_grad = False
+            shape_groups[s].stroke_color.requires_grad = False
+
     return shapes, shape_groups, fixed_inds

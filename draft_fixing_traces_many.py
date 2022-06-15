@@ -12,10 +12,10 @@ from src.fid_score import main_within, get_statistics
 import copy
 import src.experiment_utils as eu
 
-NUM_TRIALS = 2  # 30
-GENS_PER_TRIAL = 2  # 20
-NUM_SETS = 2  # 5
-args.num_iter = 20  # 1000
+NUM_TRIALS = 30
+GENS_PER_TRIAL = 20
+NUM_SETS = 5
+args.num_iter = 1000
 args.w_geo = 10
 SAVE_PATH = 'fix_paths4'
 names = ['chair', 'hat', 'lamp', 'pot', 'boat', 'dress', 'shoe', 'bust']
@@ -76,7 +76,6 @@ for n, name in enumerate(names):
             )
 
         if trial < NUM_SETS:
-            # shapes, shape_groups, fixed_inds = drawing_model.get_fixed_paths(args, 6)
             shapes, shape_groups, fixed_inds = eu.get_fixed_paths(
                 drawing_model, args, 6
             )
