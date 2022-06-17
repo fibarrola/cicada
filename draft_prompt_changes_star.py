@@ -20,24 +20,37 @@ NUM_SETS = 5
 NUM_STD = 30
 args.num_iter = 1000
 
-names = ['chair', 'hat', 'lamp', 'pot']
-yy0 = [0.5, 0.6, 0.0, 0.0]
-yy1 = [1.0, 1.0, 0.5, 0.5]
+names = ['chair', 'hat', 'lamp', 'pot', 'boat', 'dress', 'shoe', 'bust']
+yy0 = [0.5, 0.6, 0.0, 0.0, 0.35, 0.0, 0.0, 0.5]
+yy1 = [1.0, 1.0, 0.5, 0.5, 1.0, 0.5, 0.5, 1.0]
 prompts_A = [
     'A tall red chair.',
     'A drawing of a pointy black hat.',
     'A drawing of a tall green lamp.',
     'A drawing of a shallow pot.',
+    'A drawing of a sail boat.',
+    'A blue and red short dress.',
+    'A high-heel brown shoe.',
+    'A bust of a roman emperor.',
 ]
 prompts_B = [
     'A short blue chair.',
     'A drawing of a flat pink hat.',
     'A drawing of a round black lamp.',
     'A drawing of a large pot.',
+    'A drawing of a steam boat.',
+    'A blue and green long dress.',
+    'A high-heel black shoe.',
+    'A bust of an army general.',
 ]
 
+names = names[4:]
+yy0 = yy0[4:]
+yy1 = yy1[4:]
+prompts_A = prompts_A[4:]
+prompts_B = prompts_B[4:]
+
 for n, name in enumerate(names):
-    continue
 
     args.svg_path = f"data/drawing_{name}.svg"
     args.drawing_area = {'x0': args.x0, 'x1': args.x1, 'y0': yy0[n], 'y1': yy1[n]}
@@ -86,16 +99,18 @@ for n, name in enumerate(names):
             drawing_model_AB = DrawingModel(args, device)
             args.clip_prompt = prompts_B[n]
             drawing_model_AB.process_text(args)
-            drawing_model_AB.shapes = copy.deepcopy(drawing_model_A.shapes)
-            drawing_model_AB.shape_groups = copy.deepcopy(drawing_model_A.shape_groups)
-            drawing_model_AB.num_sketch_paths = copy.deepcopy(
-                drawing_model_A.num_sketch_paths
-            )
-            drawing_model_AB.augment_trans = copy.deepcopy(
-                drawing_model_A.augment_trans
-            )
-            drawing_model_AB.user_sketch = copy.deepcopy(drawing_model_A.user_sketch)
-            drawing_model_AB.fixed_inds = []
+            drawing_model_AB.load_svg_shapes(args)
+            N = len(drawing_model_AB.shapes)
+            drawing_model_AB.load_listed_shapes(args, drawing_model_A.shapes[N:], drawing_model_A.shape_groups[N:], tie=False)
+            # drawing_model_AB.shapes = copy.deepcopy(drawing_model_A.shapes)
+            # drawing_model_AB.shape_groups = copy.deepcopy(drawing_model_A.shape_groups)
+            # drawing_model_AB.num_sketch_paths = copy.deepcopy(
+            #     drawing_model_A.num_sketch_paths
+            # )
+            # drawing_model_AB.augment_trans = copy.deepcopy(
+            #     drawing_model_A.augment_trans
+            # )
+            # drawing_model_AB.user_sketch = copy.deepcopy(drawing_model_A.user_sketch)
             drawing_model_AB.initialize_variables(args)
             drawing_model_AB.initialize_optimizer()
 
@@ -159,8 +174,8 @@ for n, name in enumerate(names):
         )
 
 
-# with open('results/prompt_change/data.pkl', 'wb') as f:
-#     pickle.dump(fid_data, f)
+with open('results/prompt_change/data_02.pkl', 'wb') as f:
+    pickle.dump(fid_data, f)
 
 df = pd.DataFrame(fid_data)
 

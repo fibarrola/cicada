@@ -126,7 +126,7 @@ class DrawingModel:
         self.img0 = copy.deepcopy(self.user_sketch.img)
 
     def initialize_optimizer(self):
-        self.points_optim = torch.optim.Adam(self.points_vars, lr=0.5)
+        self.points_optim = torch.optim.Adam(self.points_vars, lr=0.1)
         self.width_optim = torch.optim.Adam(self.stroke_width_vars, lr=0.1)
         self.color_optim = torch.optim.Adam(self.color_vars, lr=0.01)
 

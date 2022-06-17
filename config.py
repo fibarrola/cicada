@@ -25,7 +25,7 @@ parser.add_argument(
 )
 parser.add_argument("--canvas_h", type=int, help="canvas height", default=224)
 parser.add_argument("--canvas_w", type=int, help="canvas width", default=224)
-parser.add_argument("--max_width", type=int, help="max px width", default=60)
+parser.add_argument("--max_width", type=int, help="max px width", default=40)
 
 # Algorithm parameters
 parser.add_argument(

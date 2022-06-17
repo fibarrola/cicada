@@ -54,7 +54,7 @@ for trial in range(args.num_trials):
                     gamma=1,
                 )
 
-        if (t + 1) % args.num_iter // 20:
+        if (t + 1) % args.num_iter // 30:
             with torch.no_grad():
                 pydiffvg.imwrite(
                     drawing_model.img,
