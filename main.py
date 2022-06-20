@@ -39,7 +39,7 @@ for trial in range(args.num_trials):
     )
 
     drawing_model.load_svg_shapes(args)
-    drawing_model.add_random_shapes(args.num_paths, args)
+    drawing_model.add_random_shapes(args.num_paths)
     drawing_model.initialize_variables(args)
     drawing_model.initialize_optimizer()
 
@@ -63,9 +63,9 @@ for trial in range(args.num_trials):
                 )
                 if args.build_gif:
                     gif_builder.add(drawing_model.img)
-
+        
         drawing_model.run_epoch(t, args)
-
+        print('das')
         # Pruning
         if t in prune_places:
             with torch.no_grad():
@@ -77,6 +77,7 @@ for trial in range(args.num_trials):
             drawing_model.prune(args.prune_ratio, args)
             args.prune_ratio += p0 / len(prune_places)
 
+            print("\n pruned \n ")
         if t - 1 in prune_places:
             with torch.no_grad():
                 pydiffvg.imwrite(
@@ -85,16 +86,17 @@ for trial in range(args.num_trials):
                     gamma=1,
                 )
 
-        utils.printProgressBar(
-            t + 1, args.num_iter, drawing_model.losses['global'].item()
-        )
+        # utils.printProgressBar(
+        #     t + 1, args.num_iter, drawing_model.losses['global'].item()
+        # )
+        # print("\n pruned\n ")
 
-    pydiffvg.imwrite(
-        drawing_model.img,
-        save_path + time_str + '.png',
-        gamma=1,
-    )
-    utils.save_data(save_path, time_str, args)
+    # pydiffvg.imwrite(
+    #     drawing_model.img,
+    #     save_path + time_str + '.png',
+    #     gamma=1,
+    # )
+    # utils.save_data(save_path, time_str, args)
 
 
 if args.build_gif:
