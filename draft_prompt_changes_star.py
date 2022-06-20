@@ -101,7 +101,12 @@ for n, name in enumerate(names):
             drawing_model_AB.process_text(args)
             drawing_model_AB.load_svg_shapes(args)
             N = len(drawing_model_AB.shapes)
-            drawing_model_AB.load_listed_shapes(args, drawing_model_A.shapes[N:], drawing_model_A.shape_groups[N:], tie=False)
+            drawing_model_AB.load_listed_shapes(
+                args,
+                drawing_model_A.shapes[N:],
+                drawing_model_A.shape_groups[N:],
+                tie=False,
+            )
             # drawing_model_AB.shapes = copy.deepcopy(drawing_model_A.shapes)
             # drawing_model_AB.shape_groups = copy.deepcopy(drawing_model_A.shape_groups)
             # drawing_model_AB.num_sketch_paths = copy.deepcopy(

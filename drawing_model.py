@@ -19,7 +19,6 @@ pydiffvg.set_use_gpu(torch.cuda.is_available())
 pydiffvg.set_device(torch.device('cuda:0') if torch.cuda.is_available() else 'cpu')
 
 
-
 class DrawingModel:
     def __init__(self, args, device):
         self.device = device
@@ -66,7 +65,7 @@ class DrawingModel:
             self.drawing_area,
         )
         self.drawing.add_shapes(shapes, shape_groups, fixed=False)
- 
+
     def remove_traces(self, idx_list):
         '''Remove the traces indexed in idx_list'''
         self.drawing.remove_traces(idx_list)
@@ -102,7 +101,7 @@ class DrawingModel:
         self.width_optim = torch.optim.Adam(self.stroke_width_vars, lr=0.1)
         self.color_optim = torch.optim.Adam(self.color_vars, lr=0.01)
 
-    def build_img(self, t, shapes = None, shape_groups = None):
+    def build_img(self, t, shapes=None, shape_groups=None):
         if not shapes:
             shapes = [trace.shape for trace in self.drawing.traces]
             shape_groups = [trace.shape_group for trace in self.drawing.traces]
@@ -211,7 +210,7 @@ class DrawingModel:
                         x.unsqueeze(0)
                         for i, x in enumerate(trace.shape.points)
                         if i % 3 == 0
-                    ]   # only points the path goes through
+                    ]  # only points the path goes through
 
             # Compute distances
             dists = []
@@ -219,13 +218,13 @@ class DrawingModel:
                 fixed_points = torch.cat(fixed_points, 0)
                 for trace in self.drawing.traces:
                     if trace.is_fixed:
-                        dists.append(-1000) # We don't remove fixed traces
+                        dists.append(-1000)  # We don't remove fixed traces
                     else:
                         points = [
                             x.unsqueeze(0)
                             for i, x in enumerate(trace.shape.points)
                             if i % 3 == 0
-                        ]   # only points the path goes through
+                        ]  # only points the path goes through
                         min_dists = []
                         for point in points:
                             d = torch.norm(point - fixed_points, dim=1)
@@ -238,7 +237,7 @@ class DrawingModel:
             losses = []
             for n, trace in enumerate(self.drawing.traces):
                 if trace.is_fixed:
-                    losses.append(1000) # We don't remove fixed traces
+                    losses.append(1000)  # We don't remove fixed traces
                 else:
                     # Compute the loss if we take out the k-th path
                     shapes, shape_groups = self.drawing.all_shapes_but_kth(n)
@@ -259,8 +258,10 @@ class DrawingModel:
             scores = [-0.01 * dists[k] ** (0.5) + losses[k] for k in range(len(losses))]
 
             # Actual pruning
-            inds = utils.k_min_elements(scores, int(prune_ratio * len(self.drawing.traces)))
-            self.drawing.remove_traces(inds)            
+            inds = utils.k_min_elements(
+                scores, int(prune_ratio * len(self.drawing.traces))
+            )
+            self.drawing.remove_traces(inds)
 
         self.initialize_variables(args)
         # self.initialize_optimizer()

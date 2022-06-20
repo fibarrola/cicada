@@ -206,6 +206,7 @@ def treebranch_initialization(
 
     return shapes, shape_groups
 
+
 def treebranch_initialization2(
     drawing,
     num_traces,
@@ -232,12 +233,17 @@ def treebranch_initialization2(
         # Maybe this is a tensor and I can't enumerate
         for k, point in enumerate(trace.shape.points):
             if k % 3 == 0:
-                if (x0 < point[0]/drawing.canvas_width < x1) and (y0 < (1 - point[1]/drawing.canvas_height) < y1):
+                if (x0 < point[0] / drawing.canvas_width < x1) and (
+                    y0 < (1 - point[1] / drawing.canvas_height) < y1
+                ):
                     # starting_points.append(tuple([x.item() for x in point]))
-                    starting_points.append((point[0]/drawing.canvas_width, point[1]/drawing.canvas_height))
+                    starting_points.append(
+                        (
+                            point[0] / drawing.canvas_width,
+                            point[1] / drawing.canvas_height,
+                        )
+                    )
                     starting_colors.append(trace.shape_group.stroke_color)
-    print(starting_points)
-    # assert False
 
     # If no endpoints in drawing zone, we make everything random
     K1 = round(partition['K1'] * num_traces) if starting_points else 0
@@ -319,7 +325,7 @@ def treebranch_initialization2(
             stroke_color=color,
         )
         shape_groups.append(path_group)
-    
+
     return shapes, shape_groups
 
 

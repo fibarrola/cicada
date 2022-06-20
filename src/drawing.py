@@ -2,11 +2,13 @@ from tokenize import group
 import torch
 import pydiffvg
 
+
 class Trace:
     def __init__(self, shape, shape_group, is_fixed):
         self.shape = shape
         self.shape_group = shape_group
         self.is_fixed = is_fixed
+
 
 class Drawing:
     def __init__(self, canvas_width, canvas_height):
@@ -66,15 +68,13 @@ class Drawing:
         N = len(self.traces)
         for k in range(len(shapes)):
             group = shape_groups[k]
-            group.shape_ids = torch.tensor([k+N])
+            group.shape_ids = torch.tensor([k + N])
             self.traces.append(Trace(shapes[k], group, fixed))
 
     def remove_traces(self, inds):
-        inds = sorted(inds, reverse=True)
-        for idx in inds:
-            self.traces.pop(idx)
+        self.traces = [self.traces[i] for i in range(len(self.traces)) if i not in inds]
         for k in range(len(self.traces)):
-            self.traces[k].shape_group.shape_id = torch.tensor([k])
+            self.traces[k].shape_group.shape_ids = torch.tensor([k])
 
     def all_shapes_but_kth(self, k):
         shapes = []

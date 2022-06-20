@@ -154,7 +154,7 @@ prompts_B = [
 #                 gamma=1,
 #             )
 
-device="cuda:0" if torch.cuda.is_available() else "cpu"
+device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
 cov_data = []
 loss_data = []
@@ -184,7 +184,9 @@ for n, name in enumerate(names):
 
         filenames = os.listdir(f"results/prompt_change/{name}/{process_name}")
         for filename in filenames:
-            img = image_loader(f"results/prompt_change/{name}/{process_name}/{filename}")
+            img = image_loader(
+                f"results/prompt_change/{name}/{process_name}/{filename}"
+            )
             img_augs = []
             for n in range(args.num_augs):
                 img_augs.append(drawing_model.augment_trans(img))
@@ -195,11 +197,13 @@ for n, name in enumerate(names):
                 loss -= torch.cosine_similarity(
                     drawing_model.text_features, img_features[n : n + 1], dim=1
                 )
-            loss_data.append({
-                'loss': loss.detach().cpu().item(),
-                'name': name,
-                'generation': gen_type
-            })
+            loss_data.append(
+                {
+                    'loss': loss.detach().cpu().item(),
+                    'name': name,
+                    'generation': gen_type,
+                }
+            )
 
 
 # with open('results/prompt_change/data_02.pkl', 'wb') as f:
@@ -243,7 +247,7 @@ fig.update_layout(
     boxmode='group',
     yaxis_title="Norm of Covariance Matrix",
     legend={'yanchor': "top", 'y': 0.99, 'xanchor': "left", 'x': 0.01},
-    font = {'size': 16}
+    font={'size': 16},
 )
 fig.show()
 
@@ -260,14 +264,16 @@ xx = df.query('generation=="prompt-change-conditioned"')['name']
 yy = df.query('generation=="prompt-change-conditioned"')['loss']
 
 fig.add_trace(
-    go.Box(y=yy, x=xx, name='prompt-change-conditioned', marker_color='rgba(0,83,170,1)')
+    go.Box(
+        y=yy, x=xx, name='prompt-change-conditioned', marker_color='rgba(0,83,170,1)'
+    )
 )
 
 fig.update_layout(
     boxmode='group',
     yaxis_title="Semantic Loss",
     legend={'yanchor': "top", 'y': 0.99, 'xanchor': "left", 'x': 0.01},
-    font = {'size': 16}
+    font={'size': 16},
 )
 fig.show()
 
@@ -277,43 +283,70 @@ fig = go.Figure()
 xx = df.query('generation=="standard"')['name']
 yy = df.query('generation=="standard"')['loss']
 
-fig.add_trace(go.Box(y=yy, x=xx, name='standard', marker_color='rgba(255,157,0,1)', quartilemethod="inclusive"))
+fig.add_trace(
+    go.Box(
+        y=yy,
+        x=xx,
+        name='standard',
+        marker_color='rgba(255,157,0,1)',
+        quartilemethod="inclusive",
+    )
+)
 
 xx = df.query('generation=="prompt-change-conditioned"')['name']
 yy = df.query('generation=="prompt-change-conditioned"')['loss']
 
 fig.add_trace(
-    go.Box(y=yy, x=xx, name='prompt-change-conditioned', marker_color='rgba(0,83,170,1)', quartilemethod="inclusive")
+    go.Box(
+        y=yy,
+        x=xx,
+        name='prompt-change-conditioned',
+        marker_color='rgba(0,83,170,1)',
+        quartilemethod="inclusive",
+    )
 )
 
 fig.update_layout(
     boxmode='group',
     yaxis_title="Semantic Loss",
     legend={'yanchor': "top", 'y': 0.99, 'xanchor': "left", 'x': 0.01},
-    font = {'size': 16}
+    font={'size': 16},
 )
 fig.show()
 
-df = pd.DataFrame(loss_data)    
+df = pd.DataFrame(loss_data)
 fig = go.Figure()
 
 xx = df.query('generation=="standard"')['name']
 yy = df.query('generation=="standard"')['loss']
 
-fig.add_trace(go.Box(y=yy, x=xx, name='standard', marker_color='rgba(255,157,0,1)', quartilemethod="exclusive"))
+fig.add_trace(
+    go.Box(
+        y=yy,
+        x=xx,
+        name='standard',
+        marker_color='rgba(255,157,0,1)',
+        quartilemethod="exclusive",
+    )
+)
 
 xx = df.query('generation=="prompt-change-conditioned"')['name']
 yy = df.query('generation=="prompt-change-conditioned"')['loss']
 
 fig.add_trace(
-    go.Box(y=yy, x=xx, name='prompt-change-conditioned', marker_color='rgba(0,83,170,1)', quartilemethod="exclusive")
+    go.Box(
+        y=yy,
+        x=xx,
+        name='prompt-change-conditioned',
+        marker_color='rgba(0,83,170,1)',
+        quartilemethod="exclusive",
+    )
 )
 
 fig.update_layout(
     boxmode='group',
     yaxis_title="Semantic Loss",
     legend={'yanchor': "top", 'y': 0.99, 'xanchor': "left", 'x': 0.01},
-    font = {'size': 16}
+    font={'size': 16},
 )
 fig.show()
-

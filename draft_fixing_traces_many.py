@@ -12,12 +12,12 @@ from src.fid_score import main_within, get_statistics
 import copy
 import src.experiment_utils as eu
 
-NUM_TRIALS = 30
-GENS_PER_TRIAL = 20
-NUM_SETS = 5
-args.num_iter = 1000
+NUM_TRIALS = 3  # 30
+GENS_PER_TRIAL = 2  # 20
+NUM_SETS = 1  # 5
+args.num_iter = 10  # 00
 args.w_geo = 10
-SAVE_PATH = 'fix_paths4'
+SAVE_PATH = 'fix_paths7'
 names = ['chair', 'hat', 'lamp', 'pot', 'boat', 'dress', 'shoe', 'bust']
 yy0 = [0.5, 0.6, 0.0, 0.0, 0.35, 0.0, 0.0, 0.5]
 yy1 = [1.0, 1.0, 0.5, 0.5, 1.0, 0.5, 0.5, 1.0]
@@ -54,7 +54,7 @@ for n, name in enumerate(names):
         drawing_model = DrawingModel(args, device)
         drawing_model.process_text(args)
         drawing_model.load_svg_shapes(args)
-        drawing_model.add_random_shapes(args.num_paths, args)
+        drawing_model.add_random_shapes(args.num_paths)
         drawing_model.initialize_variables(args)
         drawing_model.initialize_optimizer()
 
