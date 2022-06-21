@@ -15,10 +15,11 @@ import plotly.graph_objects as go
 
 device = torch.device('cuda:0') if torch.cuda.is_available() else 'cpu'
 
-NUM_TRIALS = 10
-NUM_SETS = 5
-NUM_STD = 30
-args.num_iter = 1000
+NUM_TRIALS = 2#10
+NUM_SETS = 1#5
+NUM_STD = 2#30
+SAVE_PATH = "prompt_changes5"
+args.num_iter = 10#00
 
 names = ['chair', 'hat', 'lamp', 'pot', 'boat', 'dress', 'shoe', 'bust']
 yy0 = [0.5, 0.6, 0.0, 0.0, 0.35, 0.0, 0.0, 0.5]
@@ -44,11 +45,6 @@ prompts_B = [
     'A bust of an army general.',
 ]
 
-names = names[4:]
-yy0 = yy0[4:]
-yy1 = yy1[4:]
-prompts_A = prompts_A[4:]
-prompts_B = prompts_B[4:]
 
 for n, name in enumerate(names):
 
@@ -57,11 +53,11 @@ for n, name in enumerate(names):
 
     for trial_set in range(NUM_SETS):
 
-        save_path = Path("results/").joinpath(f'prompt_change/{name}/pA/')
+        save_path = Path("results/").joinpath(f'{SAVE_PATH}/{name}/pA/')
         save_path.mkdir(parents=True, exist_ok=True)
-        save_path = Path("results/").joinpath(f'prompt_change/{name}/pAB_{trial_set}/')
+        save_path = Path("results/").joinpath(f'{SAVE_PATH}/{name}/pAB_{trial_set}/')
         save_path.mkdir(parents=True, exist_ok=True)
-        save_path = Path("results/").joinpath(f'prompt_change/{name}/pB/')
+        save_path = Path("results/").joinpath(f'{SAVE_PATH}/{name}/pB/')
         save_path.mkdir(parents=True, exist_ok=True)
 
         args.clip_prompt = prompts_A[n]
@@ -72,7 +68,7 @@ for n, name in enumerate(names):
         drawing_model_A = DrawingModel(args, device)
         drawing_model_A.process_text(args)
         drawing_model_A.load_svg_shapes(args)
-        drawing_model_A.add_random_shapes(args.num_paths, args)
+        drawing_model_A.add_random_shapes(args.num_paths)
         drawing_model_A.initialize_variables(args)
         drawing_model_A.initialize_optimizer()
 
@@ -86,7 +82,7 @@ for n, name in enumerate(names):
         with torch.no_grad():
             pydiffvg.imwrite(
                 drawing_model_A.img,
-                f'results/prompt_change/{name}/pA/{trial_set}.png',
+                f'results/{SAVE_PATH}/{name}/pA/{trial_set}.png',
                 gamma=1,
             )
 
@@ -102,10 +98,9 @@ for n, name in enumerate(names):
             drawing_model_AB.load_svg_shapes(args)
             N = len(drawing_model_AB.shapes)
             drawing_model_AB.load_listed_shapes(
-                args,
                 drawing_model_A.shapes[N:],
                 drawing_model_A.shape_groups[N:],
-                tie=False,
+                fix=False,
             )
             # drawing_model_AB.shapes = copy.deepcopy(drawing_model_A.shapes)
             # drawing_model_AB.shape_groups = copy.deepcopy(drawing_model_A.shape_groups)
@@ -128,7 +123,7 @@ for n, name in enumerate(names):
             with torch.no_grad():
                 pydiffvg.imwrite(
                     drawing_model_AB.img,
-                    f'results/prompt_change/{name}/pAB_{trial_set}/{trial}.png',
+                    f'results/{SAVE_PATH}/{name}/pAB_{trial_set}/{trial}.png',
                     gamma=1,
                 )
 
@@ -140,7 +135,7 @@ for n, name in enumerate(names):
         drawing_model_B = DrawingModel(args, device)
         drawing_model_B.process_text(args)
         drawing_model_B.load_svg_shapes(args)
-        drawing_model_B.add_random_shapes(args.num_paths, args)
+        drawing_model_B.add_random_shapes(args.num_paths)
         drawing_model_B.initialize_variables(args)
         drawing_model_B.initialize_optimizer()
 
@@ -153,7 +148,7 @@ for n, name in enumerate(names):
         with torch.no_grad():
             pydiffvg.imwrite(
                 drawing_model_B.img,
-                f'results/prompt_change/{name}/pB/{trial}.png',
+                f'results/{SAVE_PATH}/{name}/pB/{trial}.png',
                 gamma=1,
             )
 
@@ -166,7 +161,7 @@ for n, name in enumerate(names):
     ]:
         subset_dim = 10 if process_name == 'pB' else None
         mu, S = fid.get_statistics(
-            f"results/prompt_change/{name}/{process_name}",
+            f"results/{SAVE_PATH}/{name}/{process_name}",
             rand_sampled_set_dim=subset_dim,
         )
         gen_type = 'standard' if process_name == 'pB' else 'prompt-change-conditioned'
@@ -179,7 +174,7 @@ for n, name in enumerate(names):
         )
 
 
-with open('results/prompt_change/data_02.pkl', 'wb') as f:
+with open(f'results/{SAVE_PATH}/data_02.pkl', 'wb') as f:
     pickle.dump(fid_data, f)
 
 df = pd.DataFrame(fid_data)
