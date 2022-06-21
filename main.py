@@ -63,6 +63,7 @@ for trial in range(args.num_trials):
                 )
                 if args.build_gif:
                     gif_builder.add(drawing_model.img)
+                print(drawing_model.img0)
 
         drawing_model.run_epoch(t, args)
 

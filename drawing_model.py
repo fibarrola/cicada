@@ -1,11 +1,7 @@
 from src import utils
 from src.loss import CLIPConvLoss2
 from src.processing import get_augment_trans
-from src.render_design import (
-    UserSketch,
-    add_shape_groups,
-    treebranch_initialization2,
-)
+from src.render_design import treebranch_initialization2
 from src.drawing import Drawing
 from src.svg_extraction import get_drawing_paths
 import clip
@@ -52,10 +48,10 @@ class DrawingModel:
         path_list = get_drawing_paths(args.svg_path)
         self.drawing.add_paths(path_list)
 
-    def load_listed_shapes(self, shapes, shape_groups, tie=True):
+    def load_listed_shapes(self, shapes, shape_groups, fix=True):
         '''This will NOT discard existing shapes
         tie is a boolean indicating whether we penalize w.r.t. the added shapes'''
-        self.drawing.add_shapes(shapes, shape_groups, tie)
+        self.drawing.add_shapes(shapes, shape_groups, fix)
 
     def add_random_shapes(self, num_rnd_traces):
         '''This will NOT discard existing shapes'''
@@ -94,7 +90,8 @@ class DrawingModel:
             self.points_vars0[k].requires_grad = False
             self.stroke_width_vars0[k].requires_grad = False
             self.color_vars0[k].requires_grad = False
-        self.img0 = copy.deepcopy(self.drawing.img)
+        # self.img0 = copy.deepcopy(self.drawing.img)
+        self.img0 = copy.copy(self.drawing.img.detach())
 
     def initialize_optimizer(self):
         self.points_optim = torch.optim.Adam(self.points_vars, lr=0.1)
