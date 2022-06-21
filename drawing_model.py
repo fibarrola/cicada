@@ -5,7 +5,7 @@ from src.render_design import treebranch_initialization2
 from src.drawing import Drawing
 from src.svg_extraction import get_drawing_paths
 import clip
-from src.utils import get_nouns, shapes2paths
+from src.utils import get_nouns
 import torch
 import pydiffvg
 import copy
@@ -65,7 +65,7 @@ class DrawingModel:
     def remove_traces(self, idx_list):
         '''Remove the traces indexed in idx_list'''
         self.drawing.remove_traces(idx_list)
-        self.initialize_variables(args)
+        self.initialize_variables()
 
     def initialize_variables(self, args):
         self.points_vars = []
@@ -90,7 +90,6 @@ class DrawingModel:
             self.points_vars0[k].requires_grad = False
             self.stroke_width_vars0[k].requires_grad = False
             self.color_vars0[k].requires_grad = False
-        # self.img0 = copy.deepcopy(self.drawing.img)
         self.img0 = copy.copy(self.drawing.img.detach())
 
     def initialize_optimizer(self):
@@ -261,4 +260,3 @@ class DrawingModel:
             self.drawing.remove_traces(inds)
 
         self.initialize_variables(args)
-        # self.initialize_optimizer()

@@ -1,9 +1,8 @@
 import torch
 from src import utils
-from src.render_design import add_shape_groups
 
 
-def get_fixed_paths(drawing_model, args, n_keep):
+def get_fixed_paths(drawing_model, n_keep):
 
     with torch.no_grad():
 

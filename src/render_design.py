@@ -1,4 +1,3 @@
-import copy
 import pydiffvg
 import torch
 import random

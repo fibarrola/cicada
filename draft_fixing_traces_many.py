@@ -12,10 +12,10 @@ from src.fid_score import main_within, get_statistics
 import copy
 import src.experiment_utils as eu
 
-NUM_TRIALS = 3#30
-GENS_PER_TRIAL = 2#20
-NUM_SETS = 1#5
-args.num_iter = 10#00
+NUM_TRIALS = 3  # 30
+GENS_PER_TRIAL = 2  # 20
+NUM_SETS = 1  # 5
+args.num_iter = 10  # 00
 args.w_geo = 10
 SAVE_PATH = 'fix_paths7'
 names = ['chair', 'hat', 'lamp', 'pot', 'boat', 'dress', 'shoe', 'bust']
@@ -76,15 +76,11 @@ for n, name in enumerate(names):
             )
 
         if trial < NUM_SETS:
-            shapes, shape_groups = eu.get_fixed_paths(
-                drawing_model, args, 6
-            )
+            shapes, shape_groups = eu.get_fixed_paths(drawing_model, 6)
             for gen in range(GENS_PER_TRIAL):
                 drawing_modelC = DrawingModel(args, device)
                 drawing_modelC.process_text(args)
-                drawing_modelC.load_listed_shapes(
-                    shapes, shape_groups, fix=True
-                )
+                drawing_modelC.load_listed_shapes(shapes, shape_groups, fix=True)
                 drawing_modelC.add_random_shapes(args.num_paths)
                 drawing_modelC.initialize_variables(args)
                 new_mask = 1 - torch.floor(drawing_modelC.img0)

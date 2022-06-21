@@ -1,4 +1,3 @@
-from tokenize import group
 import torch
 import pydiffvg
 
@@ -45,49 +44,20 @@ class Drawing:
             self.traces.append(Trace(shape, shape_group, True))
 
         if not path_list:
-            img = torch.ones(
+            self.img = torch.ones(
                 (1, 3, self.canvas_height, self.canvas_width),
                 device='cuda:0' if torch.cuda.is_available() else 'cpu',
             )
         else:
-            scene_args = pydiffvg.RenderFunction.serialize_scene(
-                self.canvas_width, self.canvas_height, shapes, shape_groups
-            )
-            render = pydiffvg.RenderFunction.apply
-            img = render(
-                self.canvas_width, self.canvas_height, 2, 2, 0, None, *scene_args
-            )
-            img = img[:, :, 3:4] * img[:, :, :3] + torch.ones(
-                img.shape[0], img.shape[1], 3, device=pydiffvg.get_device()
-            ) * (1 - img[:, :, 3:4])
-            img = img[:, :, :3].unsqueeze(0).permute(0, 3, 1, 2)
-
-        self.img = img
+            self.render_img()
 
     def add_shapes(self, shapes, shape_groups, fixed):
         N = len(self.traces)
-        print(N)
         for k in range(len(shapes)):
-            group = shape_groups[k]
             shape_groups[k].shape_ids = torch.tensor([k + N])
-            self.traces.append(Trace(shapes[k], group, fixed))
-        
-        shapes = [trace.shape for trace in self.traces]
-        shape_groups = [trace.shape_group for trace in self.traces]
+            self.traces.append(Trace(shapes[k], shape_groups[k], fixed))
 
-        
-        scene_args = pydiffvg.RenderFunction.serialize_scene(
-                self.canvas_width, self.canvas_height, shapes, shape_groups
-            )
-        render = pydiffvg.RenderFunction.apply
-        img = render(
-            self.canvas_width, self.canvas_height, 2, 2, 0, None, *scene_args
-        )
-        img = img[:, :, 3:4] * img[:, :, :3] + torch.ones(
-            img.shape[0], img.shape[1], 3, device=pydiffvg.get_device()
-        ) * (1 - img[:, :, 3:4])
-        img = img[:, :, :3].unsqueeze(0).permute(0, 3, 1, 2)
-        self.img = img
+        self.render_img()
 
     def remove_traces(self, inds):
         self.traces = [self.traces[i] for i in range(len(self.traces)) if i not in inds]
@@ -101,8 +71,22 @@ class Drawing:
         for n, trace in enumerate(self.traces):
             if n != k:
                 shapes.append(trace.shape)
-                group = trace.shape_group
-                group.shape_ids = torch.tensor([count])
-                shape_groups.append(group)
+                trace.shape_group.shape_ids = torch.tensor([count])
+                shape_groups.append(trace.shape_group)
                 count += 1
         return shapes, shape_groups
+
+    def render_img(self):
+        shapes = [trace.shape for trace in self.traces]
+        shape_groups = [trace.shape_group for trace in self.traces]
+        scene_args = pydiffvg.RenderFunction.serialize_scene(
+            self.canvas_width, self.canvas_height, shapes, shape_groups
+        )
+        render = pydiffvg.RenderFunction.apply
+        img = render(self.canvas_width, self.canvas_height, 2, 2, 0, None, *scene_args)
+        img = img[:, :, 3:4] * img[:, :, :3] + torch.ones(
+            img.shape[0], img.shape[1], 3, device=pydiffvg.get_device()
+        ) * (1 - img[:, :, 3:4])
+        img = img[:, :, :3].unsqueeze(0).permute(0, 3, 1, 2)
+        self.img = img
+        return img

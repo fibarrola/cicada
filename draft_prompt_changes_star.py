@@ -15,13 +15,14 @@ import plotly.graph_objects as go
 
 device = torch.device('cuda:0') if torch.cuda.is_available() else 'cpu'
 
-NUM_TRIALS = 2#10
-NUM_SETS = 1#5
-NUM_STD = 2#30
+NUM_TRIALS = 2  # 10
+NUM_SETS = 1  # 5
+NUM_STD = 1  # 30
 SAVE_PATH = "prompt_changes5"
-args.num_iter = 10#00
+args.num_iter = 1000
 
-names = ['chair', 'hat', 'lamp', 'pot', 'boat', 'dress', 'shoe', 'bust']
+# names = ['chair', 'hat', 'lamp', 'pot', 'boat', 'dress', 'shoe', 'bust']
+names = ['chair']
 yy0 = [0.5, 0.6, 0.0, 0.0, 0.35, 0.0, 0.0, 0.5]
 yy1 = [1.0, 1.0, 0.5, 0.5, 1.0, 0.5, 0.5, 1.0]
 prompts_A = [
