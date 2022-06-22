@@ -78,7 +78,7 @@ class DrawingModel:
         else:
             self.drawing.add_traces(trace_list)
         self.initialize_variables()
-    
+
     def repalce_traces(self, trace_list, fix_all=False):
         '''
         Replace traces in the same positions

@@ -9,9 +9,7 @@ prompt_A = 'A tall red chair.'
 prompt_B = 'A short blue chair.'
 NUM_ITER = 5
 SVG_PATH = "data/drawing_chair.svg"
-args.drawing_area = {'x0': args.x0, 'x1': args.x1, 'y0': 0.5, 'y1': 1.}
-
-
+args.drawing_area = {'x0': args.x0, 'x1': args.x1, 'y0': 0.5, 'y1': 1.0}
 
 
 class TestPromptChange:
