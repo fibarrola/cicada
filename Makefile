@@ -7,3 +7,6 @@ pretty:
 lint:
 	black --config black.toml --check .
 	flake8 --config setup.cfg .
+
+test:
+	python3 -m pytest
