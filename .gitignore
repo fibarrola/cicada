@@ -135,6 +135,7 @@ fjd/
 olds/
 tmp/
 results/*
+experiments/
 !results/.gitkeep 
 try_things.py
 pytorch-fid/

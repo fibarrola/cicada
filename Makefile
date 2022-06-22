@@ -1,3 +1,6 @@
+install:
+	python3 setup.py install
+
 pretty:
 	black --config black.toml .
 
