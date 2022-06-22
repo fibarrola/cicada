@@ -68,9 +68,9 @@ for n, name in enumerate(names):
         ###############################
         drawing_model_A = DrawingModel(args, device)
         drawing_model_A.process_text(args)
-        drawing_model_A.load_svg_shapes(args)
+        drawing_model_A.load_svg_shapes(args.svg_path)
         drawing_model_A.add_random_shapes(args.num_paths)
-        drawing_model_A.initialize_variables(args)
+        drawing_model_A.initialize_variables()
         drawing_model_A.initialize_optimizer()
 
         for t in range(args.num_iter):
@@ -92,11 +92,10 @@ for n, name in enumerate(names):
         ###############################
 
         for trial in range(NUM_TRIALS):
-            # drawing_model_AB = copy.deepcopy(drawing_model_A)
             drawing_model_AB = DrawingModel(args, device)
             args.clip_prompt = prompts_B[n]
             drawing_model_AB.process_text(args)
-            drawing_model_AB.load_svg_shapes(args)
+            drawing_model_AB.load_svg_shapes(args.svg_path)
             N = len(drawing_model_AB.shapes)
             drawing_model_AB.load_listed_shapes(
                 drawing_model_A.shapes[N:],
@@ -112,7 +111,7 @@ for n, name in enumerate(names):
             #     drawing_model_A.augment_trans
             # )
             # drawing_model_AB.user_sketch = copy.deepcopy(drawing_model_A.user_sketch)
-            drawing_model_AB.initialize_variables(args)
+            drawing_model_AB.initialize_variables()
             drawing_model_AB.initialize_optimizer()
 
             for t in range(args.num_iter):
@@ -135,9 +134,9 @@ for n, name in enumerate(names):
 
         drawing_model_B = DrawingModel(args, device)
         drawing_model_B.process_text(args)
-        drawing_model_B.load_svg_shapes(args)
+        drawing_model_B.load_svg_shapes(args.svg_path)
         drawing_model_B.add_random_shapes(args.num_paths)
-        drawing_model_B.initialize_variables(args)
+        drawing_model_B.initialize_variables()
         drawing_model_B.initialize_optimizer()
 
         for t in range(args.num_iter):

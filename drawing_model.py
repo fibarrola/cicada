@@ -23,9 +23,6 @@ class DrawingModel:
         self.canvas_w = args.canvas_w
         self.canvas_h = args.canvas_h
         self.augment_trans = get_augment_trans(args.canvas_w, args.normalize_clip)
-        self.shapes = []
-        self.shape_groups = []
-        self.path_list = []
         self.drawing = Drawing(args.canvas_w, args.canvas_h)
         self.drawing_area = args.drawing_area
         self.num_augs = args.num_augs
@@ -43,18 +40,66 @@ class DrawingModel:
             self.text_features_neg1 = self.model.encode_text(text_input_neg1)
             self.text_features_neg2 = self.model.encode_text(text_input_neg2)
 
-    def load_svg_shapes(self, args):
-        '''This will discard all existing shapes'''
-        path_list = get_drawing_paths(args.svg_path)
+    def load_svg_shapes(self, svg_path):
+        '''
+        This will discard all existing traces and load those in an svg file
+        ---
+        input:
+            svg_path: String;
+        '''
+        path_list = get_drawing_paths(svg_path)
         self.drawing.add_paths(path_list)
 
     def load_listed_shapes(self, shapes, shape_groups, fix=True):
-        '''This will NOT discard existing shapes
-        tie is a boolean indicating whether we penalize w.r.t. the added shapes'''
+        '''
+        This will NOT discard existing shapes
+        ---
+        input:
+            shapes: Path[];
+            shape_groups: PathGroup[];
+            fix: Bool;
+        '''
         self.drawing.add_shapes(shapes, shape_groups, fix)
 
+    def add_traces(self, trace_list, replace=False, fix_all=False):
+        '''
+        Add traces on
+        ---
+        input:
+            trace_list: Trace[];
+            replace: Bool;
+            fix_all: Bool;
+        '''
+        if fix_all:
+            for trace in trace_list:
+                trace.is_fixed = True
+        if replace:
+            self.drawing.replace_traces(trace_list)
+        else:
+            self.drawing.add_traces(trace_list)
+        self.initialize_variables()
+    
+    def repalce_traces(self, trace_list, fix_all=False):
+        '''
+        Replace traces in the same positions
+        ---
+        input:
+            trace_list: Trace[];
+            fix_all: Bool;
+        '''
+        if fix_all:
+            for trace in trace_list:
+                trace.is_fixed = True
+        self.drawing.replace_traces(trace_list)
+        self.initialize_variables()
+
     def add_random_shapes(self, num_rnd_traces):
-        '''This will NOT discard existing shapes'''
+        '''
+        This will NOT discard existing shapes
+        ---
+        input:
+            num_rnd_traces: Int;
+        '''
         shapes, shape_groups = treebranch_initialization2(
             self.drawing,
             num_rnd_traces,
@@ -63,11 +108,16 @@ class DrawingModel:
         self.drawing.add_shapes(shapes, shape_groups, fixed=False)
 
     def remove_traces(self, idx_list):
-        '''Remove the traces indexed in idx_list'''
+        '''
+        Remove the traces indexed in idx_list
+        ---
+        input:
+            num_rnd_traces: Int[];
+        '''
         self.drawing.remove_traces(idx_list)
         self.initialize_variables()
 
-    def initialize_variables(self, args):
+    def initialize_variables(self):
         self.points_vars = []
         self.stroke_width_vars = []
         self.color_vars = []
@@ -195,7 +245,7 @@ class DrawingModel:
             'geometric': geo_loss,
         }
 
-    def prune(self, prune_ratio, args):
+    def prune(self, prune_ratio):
         with torch.no_grad():
 
             # Get points of tied traces
@@ -259,4 +309,4 @@ class DrawingModel:
             )
             self.drawing.remove_traces(inds)
 
-        self.initialize_variables(args)
+        self.initialize_variables()

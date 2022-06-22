@@ -53,9 +53,9 @@ for n, name in enumerate(names):
 
         drawing_model = DrawingModel(args, device)
         drawing_model.process_text(args)
-        drawing_model.load_svg_shapes(args)
+        drawing_model.load_svg_shapes(args.svg_path)
         drawing_model.add_random_shapes(args.num_paths)
-        drawing_model.initialize_variables(args)
+        drawing_model.initialize_variables()
         drawing_model.initialize_optimizer()
 
         t0 = 0
@@ -82,7 +82,7 @@ for n, name in enumerate(names):
                 drawing_modelC.process_text(args)
                 drawing_modelC.load_listed_shapes(shapes, shape_groups, fix=True)
                 drawing_modelC.add_random_shapes(args.num_paths)
-                drawing_modelC.initialize_variables(args)
+                drawing_modelC.initialize_variables()
                 new_mask = 1 - torch.floor(drawing_modelC.img0)
                 drawing_modelC.mask = torch.round(
                     (drawing_model.mask + new_mask) / 2 + 0.1
