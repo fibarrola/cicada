@@ -1,10 +1,10 @@
-from drawing_model import DrawingModel
+from src.drawing_model import DrawingModel
 import torch
 import pydiffvg
 import datetime
 import time
 from src import versions, utils
-from config import args
+from src.config import args
 from pathlib import Path
 
 versions.getinfo(showme=False)
