@@ -57,8 +57,6 @@ for n, name in enumerate(names):
             }
         )
 
-        
-
         filenames = os.listdir(f"results/fix_paths4/{name}/{process_name}")
         for filename in filenames:
             img = image_loader(f"results/fix_paths4/{name}/{process_name}/{filename}")
@@ -72,12 +70,13 @@ for n, name in enumerate(names):
                 loss -= torch.cosine_similarity(
                     drawing_model.text_features, img_features[n : n + 1], dim=1
                 )
-            loss_data.append({
-                'loss': loss.detach().cpu().item(),
-                'name': name,
-                'generation': gen_type
-            })
-
+            loss_data.append(
+                {
+                    'loss': loss.detach().cpu().item(),
+                    'name': name,
+                    'generation': gen_type,
+                }
+            )
 
 
 import pickle
@@ -122,7 +121,7 @@ fig.update_layout(
     boxmode='group',
     yaxis_title="Norm of Covariance Matrix",
     legend={'yanchor': "top", 'y': 0.99, 'xanchor': "left", 'x': 0.01},
-    font = {'size': 16}
+    font={'size': 16},
 )
 fig.show()
 
@@ -147,6 +146,6 @@ fig.update_layout(
     boxmode='group',
     yaxis_title="Semantic Loss",
     legend={'yanchor': "top", 'y': 0.99, 'xanchor': "left", 'x': 0.01},
-    font = {'size': 16}
+    font={'size': 16},
 )
 fig.show()

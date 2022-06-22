@@ -38,9 +38,9 @@ for trial in range(args.num_trials):
         "%Y_%m_%d_%H_%M_%S"
     )
 
-    drawing_model.load_svg_shapes(args)
-    drawing_model.add_random_shapes(args.num_paths, args)
-    drawing_model.initialize_variables(args)
+    drawing_model.load_svg_shapes(args.svg_path)
+    drawing_model.add_random_shapes(args.num_paths)
+    drawing_model.initialize_variables()
     drawing_model.initialize_optimizer()
 
     # Run the main optimization loop
@@ -74,7 +74,7 @@ for trial in range(args.num_trials):
                     save_path + time_str + f'_preP_{t}.png',
                     gamma=1,
                 )
-            drawing_model.prune(args.prune_ratio, args)
+            drawing_model.prune(args.prune_ratio)
             args.prune_ratio += p0 / len(prune_places)
 
         if t - 1 in prune_places:
