@@ -48,3 +48,18 @@ class TestTraceFixing:
         assert (
             drawing_model.drawing.traces[-1].shape_group.shape_ids.item() == N + 1
         )  # cause I added 2 traces
+
+    def test_trace_removal(self):
+        drawing_model = DrawingModel(args, device)
+        drawing_model.process_text(args)
+        drawing_model.load_svg_shapes(args.svg_path)
+        drawing_model.add_random_shapes(args.num_paths)
+        drawing_model.initialize_variables()
+        drawing_model.initialize_optimizer()
+
+        for t in range(NUM_ITER):
+            drawing_model.run_epoch(t, args)
+
+        N = drawing_model.drawing.traces[-1].shape_group.shape_ids.item()
+        drawing_model.remove_traces([2,3])
+        assert drawing_model.drawing.traces[-1].shape_group.shape_ids.item() == N-2
