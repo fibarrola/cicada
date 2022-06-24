@@ -8,7 +8,7 @@ from src.svg_extraction import DrawingPath
 def save_data(save_path, name, params):
     with open(save_path + name + '.txt', 'w') as f:
         f.write('I0: ' + params.svg_path + '\n')
-        f.write('prompt: ' + str(params.clip_prompt) + '\n')
+        f.write('prompt: ' + str(params.prompt) + '\n')
         f.write('num paths: ' + str(params.num_paths) + '\n')
         f.write('num_iter: ' + str(params.num_iter) + '\n')
         f.write('w_points: ' + str(params.w_points) + '\n')
@@ -88,7 +88,7 @@ class GifBuilder:
         self.images.append((255 * img).detach().type(torch.ByteTensor))
 
     def build_gif(self, path):
-        imageio.mimsave(f'{path}_movie2.gif', self.images)
+        imageio.mimsave(f'{path}_movie.gif', self.images, format="GIF", duration=0.03)
 
 
 def get_prompt_loss(img_features, text_features, args):

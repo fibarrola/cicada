@@ -12,7 +12,7 @@ parser.add_argument(
 
 # CLIP prompts
 parser.add_argument(
-    "--clip_prompt", type=str, help="what to draw", default="A red chair."
+    "--prompt", type=str, help="what to draw", default="A red chair."
 )
 parser.add_argument("--neg_prompt", type=str, default="Written words.")
 parser.add_argument("--neg_prompt_2", type=str, default="Text.")
@@ -81,7 +81,7 @@ parser.add_argument("--n_prunes", type=int, help="number of pruning stages", def
 
 # Saving
 parser.add_argument(
-    "--dir", type=str, help="subfolder for saving results", default="chair"
+    "--save_path", type=str, help="subfolder for saving results", default="chair"
 )
 parser.add_argument(
     "--build_gif", type=bool, help="build a gif of the process", default=False

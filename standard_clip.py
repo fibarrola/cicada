@@ -14,7 +14,7 @@ from src.style import VGG
 # Parameters
 params = lambda: None
 # params.svg_path: ''
-params.clip_prompt = 'The Sydney Opera by the sea.'
+params.prompt = 'The Sydney Opera by the sea.'
 params.neg_prompt = 'Written text.'
 params.neg_prompt_2 = 'Many messy scribbles.'
 params.use_neg_prompts = True
@@ -43,14 +43,14 @@ noun_prompts = ["a drawing of a " + x for x in nouns]
 
 
 # for noun in ['mask', 'key', 'bee', 'guitar', 'plane', 'shoe', 'surfboard', 'tank']:
-# params.clip_prompt = f'A drawing of a {noun}.'
+# params.prompt = f'A drawing of a {noun}.'
 
 for trial in range(params.num_trials):
     time_str = 'std_clip' + (
         datetime.datetime.today() + datetime.timedelta(hours=11)
     ).strftime("%Y_%m_%d_%H_%M_%S")
 
-    text_input = clip.tokenize(params.clip_prompt).to(device)
+    text_input = clip.tokenize(params.prompt).to(device)
     text_input_neg1 = clip.tokenize(params.neg_prompt).to(device)
     text_input_neg2 = clip.tokenize(params.neg_prompt_2).to(device)
 
