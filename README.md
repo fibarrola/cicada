@@ -1,5 +1,26 @@
 ## co_creative_draw
 
+To install, run
+```
+make install
+```
+
+For linting
+```
+make pretty
+make lint
+```
+
+For testing
+```
+make test
+```
+
+For visual inspection of functionality
+```
+make inspection_test
+```
+
 Once installed, it can be run as
 
 ```
