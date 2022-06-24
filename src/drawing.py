@@ -1,4 +1,3 @@
-from inspect import trace
 import torch
 import pydiffvg
 
@@ -59,15 +58,17 @@ class Drawing:
             self.traces.append(Trace(shapes[k], shape_groups[k], fixed))
 
         self.render_img()
-    
+
     def add_traces(self, trace_list):
-        for k in range(len(self.traces)):
-            trace_list[k].shape_group.shape_ids = torch.tensor([k+len(self.traces)])
+        for k in range(len(trace_list)):
+            trace_list[k].shape_group.shape_ids = torch.tensor([k + len(self.traces)])
         self.traces += trace_list
         self.render_img()
-    
+
     def replace_traces(self, trace_list):
-        trace_list = sorted(trace_list, key=lambda trace: trace.shape_group.shape_ids.item())
+        trace_list = sorted(
+            trace_list, key=lambda trace: trace.shape_group.shape_ids.item()
+        )
         for trace in trace_list:
             idx = trace.shape_group.shape_ids.item()
             if idx < len(self.traces):

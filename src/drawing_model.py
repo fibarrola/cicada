@@ -15,7 +15,7 @@ pydiffvg.set_use_gpu(torch.cuda.is_available())
 pydiffvg.set_device(torch.device('cuda:0') if torch.cuda.is_available() else 'cpu')
 
 
-class DrawingModel:
+class Cicada:
     def __init__(self, args, device):
         self.device = device
         self.model, preprocess = clip.load('ViT-B/32', self.device, jit=False)
@@ -29,7 +29,7 @@ class DrawingModel:
 
     def process_text(self, args):
         self.nouns, noun_prompts = get_nouns()
-        text_input = clip.tokenize(args.clip_prompt).to(self.device)
+        text_input = clip.tokenize(args.prompt).to(self.device)
         text_input_neg1 = clip.tokenize(args.neg_prompt).to(self.device)
         text_input_neg2 = clip.tokenize(args.neg_prompt_2).to(self.device)
         with torch.no_grad():
@@ -78,7 +78,7 @@ class DrawingModel:
         else:
             self.drawing.add_traces(trace_list)
         self.initialize_variables()
-    
+
     def repalce_traces(self, trace_list, fix_all=False):
         '''
         Replace traces in the same positions
@@ -143,9 +143,9 @@ class DrawingModel:
         self.img0 = copy.copy(self.drawing.img.detach())
 
     def initialize_optimizer(self):
-        self.points_optim = torch.optim.Adam(self.points_vars, lr=0.1)
-        self.width_optim = torch.optim.Adam(self.stroke_width_vars, lr=0.1)
-        self.color_optim = torch.optim.Adam(self.color_vars, lr=0.01)
+        self.points_optim = torch.optim.Adam(self.points_vars, lr=0.2)
+        self.width_optim = torch.optim.Adam(self.stroke_width_vars, lr=0.2)
+        self.color_optim = torch.optim.Adam(self.color_vars, lr=0.02)
 
     def build_img(self, t, shapes=None, shape_groups=None):
         if not shapes:
