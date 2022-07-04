@@ -134,6 +134,7 @@ diffvg/
 fjd/
 olds/
 tmp/
+build/
 results/*
 experiments/
 !results/.gitkeep 
