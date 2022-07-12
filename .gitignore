@@ -134,8 +134,9 @@ diffvg/
 fjd/
 olds/
 tmp/
+build/
 results/*
-experiments/
+# experiments/
 !results/.gitkeep 
 try_things.py
 pytorch-fid/
