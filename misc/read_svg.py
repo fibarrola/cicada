@@ -18,12 +18,16 @@ with open('logs.json', 'rb') as f:
 
 count = 0
 for y in a:
-    if y['recorded_data']['event_type'] == 'save-sketch':
-        # print(y['recorded_data']['user_name'])
+    if True: #y['recorded_data']['event_type'] == 'save-sketch':
+        print(y['recorded_data']['user_name'])
+        svg_string = y['recorded_data']['data']['svg']
         with open(f'svgs/{count}.svg', 'w') as f:
-            f.write(y['recorded_data']['data']['svg'])
+            f.write(svg_string)
+        # string_list = svg_string.split('><path')
+        # print(string_list[1][:20] == ' d="M387.05,431c-0.2')
+        # break
         subprocess.run(f"inkscape svgs/{count}.svg -o tmp.png --export-background-opacity=1".split(" "))
-        image = Image.open("tmp.png")
+        image = Image.open("tmp.png") 
         image = image.resize((224,224))
         image.save(fp=f"pngs/{count}.png")   
         count += 1
