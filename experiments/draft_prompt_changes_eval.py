@@ -154,65 +154,67 @@ prompts_B = [
 #                 gamma=1,
 #             )
 
-device = "cuda:0" if torch.cuda.is_available() else "cpu"
+# device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
-cov_data = []
-loss_data = []
-# print(['pB' for ts in range(NUM_SETS)] + [f'pAB_{ts}' for ts in range(NUM_SETS)])
-for n, name in enumerate(names):
+# cov_data = []
+# loss_data = []
+# # print(['pB' for ts in range(NUM_SETS)] + [f'pAB_{ts}' for ts in range(NUM_SETS)])
+# for n, name in enumerate(names):
 
-    args.clip_prompt = prompts_B[n]
-    drawing_model = Cicada(args, device)
-    drawing_model.process_text(args)
+#     args.clip_prompt = prompts_B[n]
+#     drawing_model = Cicada(args, device)
+#     drawing_model.process_text(args)
 
-    for process_name in ['pB' for ts in range(NUM_SETS)] + [
-        f'pAB_{ts}' for ts in range(NUM_SETS)
-    ]:
-        subset_dim = 10 if process_name == 'pB' else None
-        mu, S = fid.get_statistics(
-            f"results/prompt_change/{name}/{process_name}",
-            rand_sampled_set_dim=subset_dim,
-        )
-        gen_type = 'standard' if process_name == 'pB' else 'prompt-change-conditioned'
-        C = 0.5*S.shape[0]*(np.log(2*np.pi)+ 1)
-        aux, _ = np.linalg.eigh(S)
-        print(len([a for a in aux if a>1e-6]))
-        aux = [np.log(a) for a in aux if a>1e-6 ]
-        aux = np.nansum(np.log(aux))
-        cov_data.append(
-            {
-                'Entropy': C + aux,
-                'name': name,
-                'generation': gen_type,
-            }
-        )
+#     for process_name in ['pB' for ts in range(NUM_SETS)] + [
+#         f'pAB_{ts}' for ts in range(NUM_SETS)
+#     ]:
+#         subset_dim = 10 if process_name == 'pB' else None
+#         mu, S = fid.get_statistics(
+#             f"results/prompt_change/{name}/{process_name}",
+#             rand_sampled_set_dim=subset_dim,
+#         )
+#         gen_type = 'standard' if process_name == 'pB' else 'prompt-change-conditioned'
+#         C = 0.5*S.shape[0]*(np.log(2*np.pi)+ 1)
+#         aux, _ = np.linalg.eigh(S)
+#         print(len([a for a in aux if a>1e-6]))
+#         aux = [np.log(a) for a in aux if a>1e-6 ]
+#         aux = np.nansum(np.log(aux))
+#         cov_data.append(
+#             {
+#                 'Entropy': C + aux,
+#                 'name': name,
+#                 'generation': gen_type,
+#             }
+#         )
 
-        filenames = os.listdir(f"results/prompt_change/{name}/{process_name}")
-        for filename in filenames:
-            img = image_loader(
-                f"results/prompt_change/{name}/{process_name}/{filename}"
-            )
-            img_augs = []
-            for n in range(args.num_augs):
-                img_augs.append(drawing_model.augment_trans(img))
-            im_batch = torch.cat(img_augs)
-            img_features = drawing_model.model.encode_image(im_batch)
-            loss = 0
-            for n in range(args.num_augs):
-                loss -= torch.cosine_similarity(
-                    drawing_model.text_features, img_features[n : n + 1], dim=1
-                )
-            loss_data.append(
-                {
-                    'loss': loss.detach().cpu().item(),
-                    'name': name,
-                    'generation': gen_type,
-                }
-            )
+#         filenames = os.listdir(f"results/prompt_change/{name}/{process_name}")
+#         for filename in filenames:
+#             img = image_loader(
+#                 f"results/prompt_change/{name}/{process_name}/{filename}"
+#             )
+#             img_augs = []
+#             for n in range(args.num_augs):
+#                 img_augs.append(drawing_model.augment_trans(img))
+#             im_batch = torch.cat(img_augs)
+#             img_features = drawing_model.model.encode_image(im_batch)
+#             loss = 0
+#             for n in range(args.num_augs):
+#                 loss -= torch.cosine_similarity(
+#                     drawing_model.text_features, img_features[n : n + 1], dim=1
+#                 )
+#             loss_data.append(
+#                 {
+#                     'loss': loss.detach().cpu().item(),
+#                     'name': name,
+#                     'generation': gen_type,
+#                 }
+#             )
 
 
 # with open('results/prompt_change/data_02.pkl', 'wb') as f:
 #     pickle.dump(cov_data, f)
+with open('results/prompt_change/entropy.pkl','rb') as f:
+    cov_data = pickle.load(f)
 
 df = pd.DataFrame(cov_data)
 
@@ -250,8 +252,8 @@ fig.add_trace(
 
 fig.update_layout(
     boxmode='group',
-    yaxis_title="Entropy",
-    legend={'yanchor': "top", 'y': 0.99, 'xanchor': "left", 'x': 0.01},
+    yaxis_title="TIE",
+    legend={'yanchor': "bottom", 'y': 0.01, 'xanchor': "left", 'x': 0.01},
     font={'size': 16},
 )
 fig.show()

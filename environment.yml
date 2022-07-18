@@ -1,0 +1,17 @@
+name: cicada
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - python
+  - cudatoolkit
+  - thrust
+  - pytorch
+  - torchvision
+  - numpy
+  - scikit-image
+  - cmake
+  - ffmpeg
+  - pip
+prefix: C:\Users\ABC\.conda\envs\cicada

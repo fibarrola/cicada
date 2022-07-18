@@ -136,6 +136,8 @@ olds/
 tmp/
 build/
 results/*
+pngs/
+svgs/
 # experiments/
 !results/.gitkeep 
 try_things.py
