@@ -7,9 +7,10 @@ from PIL import Image
 
 
 
-with open('logs.json', 'rb') as f:
-    a = json.load(f)
+# with open('logs.json', 'rb') as f:
+#     a = json.load(f)
 
+a = [json.loads(line) for line in open('logs.json', 'rb')]
 # for x in a[0]:
 #     print(x, a[0][x],'\n')
 
@@ -21,16 +22,19 @@ for y in a:
     if True: #y['recorded_data']['event_type'] == 'save-sketch':
         print(y['recorded_data']['user_name'])
         svg_string = y['recorded_data']['data']['svg']
+        print(svg_string)
         with open(f'svgs/{count}.svg', 'w') as f:
             f.write(svg_string)
         # string_list = svg_string.split('><path')
         # print(string_list[1][:20] == ' d="M387.05,431c-0.2')
         # break
-        subprocess.run(f"inkscape svgs/{count}.svg -o tmp.png --export-background-opacity=1".split(" "))
-        image = Image.open("tmp.png") 
-        image = image.resize((224,224))
-        image.save(fp=f"pngs/{count}.png")   
-        count += 1
+        subprocess.run(f"inkscape Documents/co_creative_draw/misc/svgs/{count}.svg -o Documents/co_creative_draw/misc/tmp.png --export-background-opacity=1".split(" "))
+        # image = Image.open("tmp.png") 
+        # image = image.resize((224,224))
+        # image.save(fp=f"pngs/{count}.png")   
+        # count += 1
+        
+    break
 
 # img = cairo.ImageSurface(cairo.FORMAT_ARGB32, 640,480)
 
