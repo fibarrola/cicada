@@ -4,6 +4,14 @@ import imageio
 
 from src.svg_extraction import DrawingPath
 
+# color_palette = ['#0062A7', '#324513','#DBA869', '#6E9BCE', '#008C94']
+color_palette = [
+    'RGB(11,56,113)',
+    'RGB(36,145,78)',
+    'RGB(161,143,10)',
+    'RGB(231,138,66)',
+    'RGB(116,47,50)',
+]
 
 def save_data(save_path, name, params):
     with open(save_path + name + '.txt', 'w') as f:
@@ -107,3 +115,21 @@ def shapes2paths(shapes, shape_groups, tie, args):
         color = shape_groups[k].stroke_color
         path_list.append(DrawingPath(path, color, width, num_segments, tie))
     return path_list
+
+
+def tie(S, K=None):
+    eigvals, _ = np.linalg.eigh(S)
+    if not K:
+        eigvals = [x for x in eigvals if x>0.01]
+        K = len(eigvals)
+    else:
+        eigvals = eigvals[:k]
+
+    entropy = K*(np.log(2*np.pi)+ 1)
+    for eig in eigvals:
+        if eig < 0.01:
+            raise ValueError("Eigenvalue is too small")
+        entropy += np.log(eig)
+    entropy *= 0.5
+
+    return entropy
