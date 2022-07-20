@@ -13,6 +13,7 @@ color_palette = [
     'RGB(116,47,50)',
 ]
 
+
 def save_data(save_path, name, params):
     with open(save_path + name + '.txt', 'w') as f:
         f.write('I0: ' + params.svg_path + '\n')
@@ -120,12 +121,12 @@ def shapes2paths(shapes, shape_groups, tie, args):
 def tie(S, K=None):
     eigvals, _ = np.linalg.eigh(S)
     if not K:
-        eigvals = [x for x in eigvals if x>0.01]
+        eigvals = [x for x in eigvals if x > 0.01]
         K = len(eigvals)
     else:
-        eigvals = eigvals[:k]
+        eigvals = eigvals[:K]
 
-    entropy = K*(np.log(2*np.pi)+ 1)
+    entropy = K * (np.log(2 * np.pi) + 1)
     for eig in eigvals:
         if eig < 0.01:
             raise ValueError("Eigenvalue is too small")

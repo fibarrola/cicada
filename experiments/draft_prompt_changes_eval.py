@@ -213,7 +213,7 @@ prompts_B = [
 
 # with open('results/prompt_change/data_02.pkl', 'wb') as f:
 #     pickle.dump(cov_data, f)
-with open('results/prompt_change/entropy.pkl','rb') as f:
+with open('results/prompt_change/entropy.pkl', 'rb') as f:
     cov_data = pickle.load(f)
 
 df = pd.DataFrame(cov_data)

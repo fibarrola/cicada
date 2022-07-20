@@ -42,25 +42,23 @@ for trial in range(args.num_trials):
     cicada.add_random_shapes(args.num_paths)
     cicada.initialize_variables()
     cicada.initialize_optimizer()
+    with torch.no_grad():
+        pydiffvg.imwrite(
+            cicada.img0.detach().cpu().squeeze(0).permute(1, 2, 0),
+            save_path + time_str + '00.png',
+            gamma=1,
+        )
 
     # Run the main optimization loop
     for t in range(args.num_iter):
 
-        if t == 1:
+        if (t + 1) % args.num_iter // 50:
             with torch.no_grad():
                 pydiffvg.imwrite(
                     cicada.img,
-                    save_path + time_str + '00.png',
+                    save_path + time_str + '.png',
                     gamma=1,
                 )
-
-        if (t + 1) % args.num_iter // 50:
-            with torch.no_grad():
-                # pydiffvg.imwrite(
-                #     cicada.img,
-                #     save_path + time_str + '.png',
-                #     gamma=1,
-                # )
                 if args.build_gif:
                     gif_builder.add(cicada.img)
 

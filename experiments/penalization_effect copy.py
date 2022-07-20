@@ -2,24 +2,28 @@ import torch
 import pydiffvg
 import os
 import numpy as np
+import pandas as pd
 import src.fid_score as fid
+import plotly.graph_objects as go
 import pickle
+import datetime
 from pathlib import Path
 from src import utils
 from src.config import args
 from src.drawing_model import Cicada
 from src.style import image_loader
 
+device = torch.device('cuda:0') if torch.cuda.is_available() else 'cpu'
 
-NUM_TRIALS = 10
-SAVE_PATH = 'penalization_effect'
-CREATE_SAMPLES = False
+NUM_TRIALS = 20
+SAVE_PATH = 'penalization_effect2/'
+CREATE_SAMPLES = True
 args.num_iter = 1500
-
-SAVE_PATH += '2022_07_02_02_16'
-# SAVE_PATH += (datetime.datetime.today() + datetime.timedelta(hours=11)).strftime(
-#         "%Y_%m_%d_%H_%M"
-#     )
+args.num_paths = 16
+# SAVE_PATH += '2022_07_13_02_06'
+SAVE_PATH += (datetime.datetime.today() + datetime.timedelta(hours=11)).strftime(
+    "%Y_%m_%d_%H_%M"
+)
 
 
 names = ['chair', 'hat', 'lamp', 'pot', 'boat', 'dress', 'shoe', 'bust']
@@ -40,10 +44,6 @@ args.w_points = 0.1 * args.w_points
 args.w_colors = 0.1 * args.w_colors
 args.w_widths = 0.1 * args.w_widths
 ww_geo = [0.035, 0.35, 3.5, 35, 3500]
-
-# names = names[:3]
-
-device = torch.device('cuda:0') if torch.cuda.is_available() else 'cpu'
 
 if CREATE_SAMPLES:
     for n, name in enumerate(names):
@@ -72,7 +72,6 @@ if CREATE_SAMPLES:
 
                     cicada.run_epoch(t, args)
 
-                    # if t % 10 == 0:
                     utils.printProgressBar(
                         t + 1, args.num_iter, cicada.losses['global'].item()
                     )
@@ -96,16 +95,11 @@ for n, name in enumerate(names):
     for w, w_geo in enumerate(ww_geo):
         for rand_iter in range(3):
             mu, S = fid.get_statistics(
-                f"results/{SAVE_PATH}/{name}/{w}",  # rand_sampled_set_dim=5
+                f"results/{SAVE_PATH}/{name}/{w}", rand_sampled_set_dim=6
             )
-            C = 0.5 * S.shape[0] * (np.log(2 * np.pi) + 1)
-            aux, _ = np.linalg.eigh(S)
-            print(len([a for a in aux if a > 1e-6]))
-            aux = [np.log(a) for a in aux if a > 1e-6]
-            aux = 0.5 * np.nansum(np.log(aux))
             cov_data.append(
                 {
-                    'Entropy': C + aux,
+                    'Entropy': utils.tie(S),
                     'name': name,
                     'penalizer': w_geo,
                 }
@@ -132,43 +126,7 @@ for n, name in enumerate(names):
                 }
             )
 
-
 with open(f'results/{SAVE_PATH}/cov_data.pkl', 'wb') as f:
     pickle.dump(cov_data, f)
 with open(f'results/{SAVE_PATH}/loss_data.pkl', 'wb') as f:
     pickle.dump(loss_data, f)
-
-# fig = go.Figure()
-
-# colors = [
-#     'rgba(0,170,123,1)',
-#     'rgba(0,83,170,1)',
-#     'rgba(255,157,0,1)',
-#     'rgba(255,157,0,1)',
-#     'rgba(255,157,0,1)',
-# ]
-# for w, w_geo in enumerate(ww_geo):
-#     xx = [x['name'] for x in cov_data if x['penalizer'] == w_geo]
-#     yy = [x['Entropy'] for x in cov_data if x['penalizer'] == w_geo]
-#     fig.add_trace(go.Box(y=yy, x=xx, name=f'geo pen = {w_geo}', marker_color=colors[w]))
-
-# fig.update_layout(
-#     boxmode='group',
-#     legend={'yanchor': "top", 'y': 0.99, 'xanchor': "left", 'x': 0.01},
-# )
-# fig.show()
-
-# fig = go.Figure()
-# names = ['Low penalization', 'Medium penalization', 'High penalization']
-# colors = ['rgba(0,170,123,1)', 'rgba(0,83,170,1)', 'rgba(255,157,0,1)', 'rgba(255,157,0,1)', 'rgba(255,157,0,1)']
-# for w, w_geo in enumerate(ww_geo):
-#     xx = ['nothing' for x in cov_data if x['penalizer']==w_geo]
-#     yy = [x['Entropy'] for x in cov_data if x['penalizer']==w_geo]
-#     fig.add_trace(go.Box(y=yy, x=xx, name=names[w], marker_color=colors[w]))
-# fig.update_xaxes(visible=False)
-# fig.update_yaxes(title_text='Norm of Cov. Matrix')
-# fig.update_layout(
-#     boxmode='group',
-#     legend={'yanchor': "top", 'y': 0.99, 'xanchor': "right", 'x': 0.99},
-# )
-# fig.show()

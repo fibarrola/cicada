@@ -1,5 +1,4 @@
 import torch
-from experiments.penalization_effect import CREATE_SAMPLES
 import pydiffvg
 from src.config import args
 from pathlib import Path
@@ -56,7 +55,9 @@ if CREATE_SAMPLES:
 
             save_path = Path("results/").joinpath(f'{SAVE_PATH}/{name}/pA/')
             save_path.mkdir(parents=True, exist_ok=True)
-            save_path = Path("results/").joinpath(f'{SAVE_PATH}/{name}/pAB_{trial_set}/')
+            save_path = Path("results/").joinpath(
+                f'{SAVE_PATH}/{name}/pAB_{trial_set}/'
+            )
             save_path.mkdir(parents=True, exist_ok=True)
             save_path = Path("results/").joinpath(f'{SAVE_PATH}/{name}/pB/')
             save_path.mkdir(parents=True, exist_ok=True)
