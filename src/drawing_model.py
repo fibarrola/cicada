@@ -1,7 +1,7 @@
 from src import utils
 from src.loss import CLIPConvLoss2
 from src.processing import get_augment_trans
-from src.render_design import treebranch_initialization2
+from src.render_design import treebranch_initialization
 from src.drawing import Drawing
 from src.svg_extraction import get_drawing_paths
 import clip
@@ -100,7 +100,7 @@ class Cicada:
         input:
             num_rnd_traces: Int;
         '''
-        shapes, shape_groups = treebranch_initialization2(
+        shapes, shape_groups = treebranch_initialization(
             self.drawing,
             num_rnd_traces,
             self.drawing_area,

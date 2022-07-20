@@ -93,7 +93,7 @@ import pickle
 # with open('results/fix_paths4/loss_data.pkl', 'wb') as f:
 #     pickle.dump(loss_data, f)
 
-with open('results/fix_paths4/entropy.pkl','rb') as f:
+with open('results/fix_paths4/entropy.pkl', 'rb') as f:
     cov_data = pickle.load(f)
 
 df = pd.DataFrame(cov_data)
