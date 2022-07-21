@@ -4,6 +4,7 @@ import os
 import numpy as np
 import src.fid_score as fid
 import pickle
+import datetime
 from pathlib import Path
 from src import utils
 from src.config import args
@@ -11,15 +12,17 @@ from src.drawing_model import Cicada
 from src.style import image_loader
 
 
-NUM_TRIALS = 10
+NUM_TRIALS = 20
 SAVE_PATH = 'penalization_effect'
-CREATE_SAMPLES = False
+CREATE_SAMPLES = True
 args.num_iter = 1500
 
-SAVE_PATH += '2022_07_02_02_16'
-# SAVE_PATH += (datetime.datetime.today() + datetime.timedelta(hours=11)).strftime(
-#         "%Y_%m_%d_%H_%M"
-#     )
+if CREATE_SAMPLES:
+    SAVE_PATH += (datetime.datetime.today() + datetime.timedelta(hours=11)).strftime(
+            "%Y_%m_%d_%H_%M"
+        )
+else:
+    SAVE_PATH += '2022_07_02_02_16'
 
 
 names = ['chair', 'hat', 'lamp', 'pot', 'boat', 'dress', 'shoe', 'bust']
@@ -36,10 +39,10 @@ prompts = [
     'A bust.',
 ]
 
-args.w_points = 0.1 * args.w_points
-args.w_colors = 0.1 * args.w_colors
-args.w_widths = 0.1 * args.w_widths
-ww_geo = [0.035, 0.35, 3.5, 35, 3500]
+# args.w_points = 0.5 * args.w_points
+# args.w_colors = 0.5 * args.w_colors
+# args.w_widths = 0.5 * args.w_widths
+ww_geo = [0.035, 3.5, 3500]
 
 # names = names[:3]
 
@@ -59,6 +62,10 @@ if CREATE_SAMPLES:
             save_path.mkdir(parents=True, exist_ok=True)
             save_path = str(save_path) + '/'
 
+            save_path_prepruning = Path("results/").joinpath(f'{SAVE_PATH}/{name}/pp{w}')
+            save_path_prepruning.mkdir(parents=True, exist_ok=True)
+            save_path_prepruning = str(save_path_prepruning) + '/'
+
             for trial in range(NUM_TRIALS):
 
                 cicada = Cicada(args, device)
@@ -76,6 +83,15 @@ if CREATE_SAMPLES:
                     utils.printProgressBar(
                         t + 1, args.num_iter, cicada.losses['global'].item()
                     )
+
+                    if t == round(args.num_iter*0.75):
+                        cicada.prune(0.5)
+                        with torch.no_grad():
+                            pydiffvg.imwrite(
+                                cicada.img,
+                                save_path_prepruning + f'prep/{trial}.png',
+                                gamma=1,
+                            )
 
                 with torch.no_grad():
                     pydiffvg.imwrite(
