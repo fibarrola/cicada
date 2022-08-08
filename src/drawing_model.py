@@ -1,6 +1,5 @@
 from src import utils
 from src.loss import CLIPConvLoss2
-from src.processing import get_augment_trans
 from src.render_design import treebranch_initialization
 from src.drawing import Drawing
 from src.svg_extraction import get_drawing_paths
@@ -22,7 +21,7 @@ class Cicada:
         self.clipConvLoss = CLIPConvLoss2(self.device)
         self.canvas_w = args.canvas_w
         self.canvas_h = args.canvas_h
-        self.augment_trans = get_augment_trans(args.canvas_w, args.normalize_clip)
+        self.augment_trans = utils.get_augment_trans(args.canvas_w, args.normalize_clip)
         self.drawing = Drawing(args.canvas_w, args.canvas_h)
         self.drawing_area = args.drawing_area
         self.num_augs = args.num_augs

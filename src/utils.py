@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 import imageio
-
+from torchvision import transforms
 from src.svg_extraction import DrawingPath
 
 # color_palette = ['#0062A7', '#324513','#DBA869', '#6E9BCE', '#008C94']
@@ -134,3 +134,27 @@ def tie(S, K=None):
     entropy *= 0.5
 
     return entropy
+
+
+def get_augment_trans(canvas_width, normalize_clip=False):
+
+    if normalize_clip:
+        augment_trans = transforms.Compose(
+            [
+                transforms.RandomPerspective(fill=1, p=1, distortion_scale=0.5),
+                transforms.RandomResizedCrop(canvas_width, scale=(0.7, 0.9)),
+                transforms.Normalize(
+                    (0.48145466, 0.4578275, 0.40821073),
+                    (0.26862954, 0.26130258, 0.27577711),
+                ),
+            ]
+        )
+    else:
+        augment_trans = transforms.Compose(
+            [
+                transforms.RandomPerspective(fill=1, p=1, distortion_scale=0.5),
+                transforms.RandomResizedCrop(canvas_width, scale=(0.7, 0.9)),
+            ]
+        )
+
+    return augment_trans
