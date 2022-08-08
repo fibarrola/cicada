@@ -3,11 +3,10 @@ import torch
 import pydiffvg
 import datetime
 import time
-from src import versions, utils
+from src import utils
 from src.config import args
 from pathlib import Path
 
-versions.getinfo(showme=False)
 device = torch.device('cuda:0') if torch.cuda.is_available() else 'cpu'
 
 # Build dir if does not exist & make sure using a
