@@ -2,12 +2,41 @@
 
 A Collaborative, Informed and Context Aware Drawing Agent for Co-Creative Design
 
+Before suffering through the installation process (that should pose no problem, but we all know how these things go) we recommend you try CICADA in a google Colab notebook.
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](
+https://colab.research.google.com/drive/1rEnHMMBnK--qxXatwt9QEQexKsHZWizb?usp=sharing)
+
+
 ## Installation
 
-To install, run
+### gcc version
+
+Make sure your gcc version is 8 or lower
 ```
-make install
+gcc --version
 ```
+
+### Anaconda
+
+Make sure you have Anaconda 3 installed and create an environment to install CICADA
+```
+conda update -n base -c defaults conda
+conda env create -n cicada
+conda activate cicada
+```
+
+### Install
+
+Clone the repo, cd to it and run setup.sh (this can take a while)
+```
+git clone https://github.com/fibarrola/cicada.git
+cd cicada
+sh setup.sh
+```
+
+
+## Use CICADA
 
 Once installed, it can be run as
 
