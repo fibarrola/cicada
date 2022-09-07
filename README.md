@@ -7,6 +7,7 @@ Before suffering through the installation process (that should pose no problem, 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](
 https://colab.research.google.com/drive/1rEnHMMBnK--qxXatwt9QEQexKsHZWizb?usp=sharing)
 
+<br>
 
 ## Installation
 
@@ -35,8 +36,9 @@ cd cicada
 sh setup.sh
 ```
 
+<br>
 
-## Use CICADA
+## Using CICADA
 
 Once installed, it can be run as
 
