@@ -74,3 +74,16 @@ The following options can be used to change the default parameters
 --prune_ratio <float>       ratio of paths to be pruned out
 --save_path <str>           subfolder for saving results
 ```
+
+
+<!-- ![](repo_img/avocado_chair.gif?raw=true) -->
+
+<br>
+
+## Capability
+
+CICADA is meant to give way to an interactive design process. Here we show an example of a human user drawing "An avocado chair", and using CICADA to aid her in making the drawing into a "An antique avocado chair". The interface is still under development and will be released shortly.
+
+<p align="center">
+<img src="https://github.com/fibarrola/cicada/blob/master/repo_img/avocado_chair.gif" width="448"/>
+</p>
