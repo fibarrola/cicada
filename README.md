@@ -13,7 +13,7 @@ https://colab.research.google.com/drive/1rEnHMMBnK--qxXatwt9QEQexKsHZWizb?usp=sh
 
 ### gcc version
 
-Make sure your gcc version is 8 or lower
+<!-- Make sure your gcc version is 8 or lower -->
 ```
 gcc --version
 ```
