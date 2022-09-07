@@ -1,4 +1,8 @@
-## co_creative_draw
+# CICADA
+
+A Collaborative, Informed and Context Aware Drawing Agent for Co-Creative Design
+
+## Installation
 
 To install, run
 ```
