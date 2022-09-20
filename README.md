@@ -36,7 +36,7 @@ Clone the repo, cd to it and run setup.sh (this can take a while)
 ```
 git clone https://github.com/fibarrola/cicada.git
 cd cicada
-sh setup.sh
+source setup.sh
 ```
 
 <br>
