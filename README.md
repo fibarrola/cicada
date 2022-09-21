@@ -21,17 +21,9 @@ Make sure your gcc version is 8 or lower
 gcc --version
 ```
 
-### Anaconda
-
-Make sure you have Anaconda 3 installed and create an environment to install CICADA
-```
-conda update -n base -c defaults conda
-conda env create -n cicada
-conda activate cicada
-```
-
 ### Install
 
+Make sure you have Anaconda 3 installed.
 Clone the repo, cd to it and run setup.sh (this can take a while)
 ```
 git clone https://github.com/fibarrola/cicada.git

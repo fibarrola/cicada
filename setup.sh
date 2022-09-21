@@ -5,13 +5,12 @@
 # sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 8
 # sudo update-alternatives --config gcc
 
-conda update -n base -c defaults conda
-conda env create -n cicada
+conda create -n cicada
 conda activate cicada
 
 git clone https://github.com/BachiLi/diffvg
 cd diffvg
-cp ./fix.py fix.py
+cp ../fix.py fix.py
 python3 fix.py
 
 git submodule update --init --recursive
@@ -29,5 +28,5 @@ pip install visdom
 python3 setup.py install
 
 cd ..
-pip3 install -r requirements2.txt
+pip3 install -r requirements.txt
 python3 setup.py install
