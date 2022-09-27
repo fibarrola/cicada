@@ -1,6 +1,6 @@
 # CICADA
 
-A Collaborative, Informed and Context Aware Drawing Agent for Co-Creative Design
+A Collaborative, Interactive and Context Aware Drawing Agent for Co-Creative Design
 
 
 [Francisco Ibarrola](https://www.linkedin.com/in/fibarrola/), [Tomas Lawton](https://www.linkedin.com/in/tomas-lawton-512066199) and [Kazjon Grace](https://www.linkedin.com/in/kazjon-grace/)
