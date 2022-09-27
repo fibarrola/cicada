@@ -2,12 +2,16 @@
 
 A Collaborative, Informed and Context Aware Drawing Agent for Co-Creative Design
 
+
 [Francisco Ibarrola](https://www.linkedin.com/in/fibarrola/), [Tomas Lawton](https://www.linkedin.com/in/tomas-lawton-512066199) and [Kazjon Grace](https://www.linkedin.com/in/kazjon-grace/)
 
 <img src="https://github.com/fibarrola/cicada/blob/master/repo_img/cicada_results.png"/>
 <!-- ![](repo_img/cicada_resutls.png) -->
 
-Before suffering through the installation process (that should pose no problem, but we all know how these things go) we recommend you try CICADA in a google Colab notebook.
+
+You can read the preprint [here](https://arxiv.org/abs/2209.12588)
+
+To avoid the struggle that installation sometimes entail, we recommend you try CICADA in a google Colab notebook.
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](
 https://colab.research.google.com/drive/1rEnHMMBnK--qxXatwt9QEQexKsHZWizb?usp=sharing)
