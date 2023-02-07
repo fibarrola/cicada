@@ -205,16 +205,16 @@ class Cicada:
         for iter in range(num_iter):
             self.run_epoch()
         self.initialize_optimizer(1)
-    
+
     @torch.no_grad()
     def mutate_respawn_traces(self, rate=0.3, num_sets=10, num_augs=4):
         unfixed_inds = [
-            k for k in range(len(self.drawing.traces)) if not self.drawing.traces[k].is_fixed
+            k
+            for k in range(len(self.drawing.traces))
+            if not self.drawing.traces[k].is_fixed
         ]
         N = round(rate * len(unfixed_inds))
-        index_lists = [
-            np.random.choice(unfixed_inds, N) for k in range(num_sets)
-        ]
+        index_lists = [np.random.choice(unfixed_inds, N) for k in range(num_sets)]
         losses = []
         for idx_list in index_lists:
             shapes, shape_groups = self.drawing.all_shapes_except(idx_list)
@@ -230,13 +230,10 @@ class Cicada:
                     self.text_features, img_features[n : n + 1], dim=1
                 )
             losses.append(loss.cpu().item())
-        
+
         min_idx = np.argmin(losses)
         self.drawing.remove_traces(index_lists[min_idx])
         self.add_random_shapes(N)
-
-        
-        
 
     def run_epoch(self, t="deprecated", num_augs=4):
         self.points_optim.zero_grad()
