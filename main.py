@@ -30,8 +30,21 @@ for trial in range(args.num_trials):
 
     args.prune_ratio = p0 / len(prune_places)
 
-    cicada = Cicada(args, device)
-    cicada.process_text(args)
+    cicada = Cicada(
+        device=device,
+        canvas_w=args.canvas_w,
+        canvas_h=args.canvas_h,
+        drawing_area=args.drawing_area,
+        max_width=args.max_width,
+    )
+    cicada.set_penalizers(
+        w_points=args.w_points,
+        w_colors=args.w_colors,
+        w_widths=args.w_widths,
+        w_img=args.w_img,
+        w_geo=args.w_geo,
+    )
+    cicada.process_text(args.prompt)
 
     time_str = (datetime.datetime.today() + datetime.timedelta(hours=11)).strftime(
         "%Y_%m_%d_%H_%M_%S"
@@ -61,7 +74,7 @@ for trial in range(args.num_trials):
                 if args.build_gif:
                     gif_builder.add(cicada.img)
 
-        cicada.run_epoch(t, args)
+        cicada.run_epoch()
 
         # Pruning
         if t in prune_places:
