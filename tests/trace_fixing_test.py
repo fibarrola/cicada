@@ -10,7 +10,6 @@ NUM_ITER = 5
 
 class TestTraceFixing:
     def test_prompt_change(self):
-
         cicada = Cicada(
             device=device,
             canvas_w=args.canvas_w,

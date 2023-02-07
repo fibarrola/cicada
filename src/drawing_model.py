@@ -143,9 +143,9 @@ class Cicada:
             self.color_vars.append(trace.shape_group.stroke_color)
 
         self.render = pydiffvg.RenderFunction.apply
-        self.mask = utils.area_mask(self.drawing.canvas_width, self.drawing.canvas_height, self.drawing_area).to(
-            self.device
-        )
+        self.mask = utils.area_mask(
+            self.drawing.canvas_width, self.drawing.canvas_height, self.drawing_area
+        ).to(self.device)
         self.points_vars0 = copy.deepcopy(self.points_vars)
         self.stroke_width_vars0 = copy.deepcopy(self.stroke_width_vars)
         self.color_vars0 = copy.deepcopy(self.color_vars)
@@ -198,12 +198,6 @@ class Cicada:
         self.w_img = w_img
         self.w_geo = w_geo
         self.w_global = w_global
-
-    def mutate_lr(self, increase_rate=5, num_iter=10):
-        self.initialize_optimizer(increase_rate)
-        for iter in range(num_iter):
-            self.run_epoch()
-        self.initialize_optimizer(1)
 
     def run_epoch(self, t="deprecated", num_augs=4):
         self.points_optim.zero_grad()
@@ -300,7 +294,6 @@ class Cicada:
 
     def prune(self, prune_ratio, num_augs=4):
         with torch.no_grad():
-
             # Get points of tied traces
             fixed_points = []
             for trace in self.drawing.traces:

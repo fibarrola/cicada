@@ -2,7 +2,6 @@ from torchvision import transforms
 
 
 def get_augment_trans(canvas_width, normalize_clip=False):
-
     if normalize_clip:
         augment_trans = transforms.Compose(
             [

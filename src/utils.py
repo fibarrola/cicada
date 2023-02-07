@@ -137,7 +137,6 @@ def tie(S, K=None):
 
 
 def get_augment_trans(canvas_width, normalize_clip=False):
-
     if normalize_clip:
         augment_trans = transforms.Compose(
             [

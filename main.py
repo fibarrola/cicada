@@ -27,7 +27,6 @@ p0 = args.prune_ratio
 gif_builder = utils.GifBuilder()
 
 for trial in range(args.num_trials):
-
     args.prune_ratio = p0 / len(prune_places)
 
     cicada = Cicada(
@@ -63,7 +62,6 @@ for trial in range(args.num_trials):
 
     # Run the main optimization loop
     for t in range(args.num_iter):
-
         if (t + 1) % args.num_iter // 50:
             with torch.no_grad():
                 pydiffvg.imwrite(

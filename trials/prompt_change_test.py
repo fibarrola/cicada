@@ -41,7 +41,6 @@ cicada.initialize_variables()
 cicada.initialize_optimizer()
 
 for t in range(NUM_ITER):
-
     cicada.run_epoch()
     utils.printProgressBar(t + 1, args.num_iter, cicada.losses['global'].item())
 

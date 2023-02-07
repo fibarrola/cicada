@@ -14,7 +14,6 @@ args.drawing_area = {'x0': args.x0, 'x1': args.x1, 'y0': 0.5, 'y1': 1.0}
 
 class TestPromptChange:
     def test_prompt_change(self):
-
         # Using prompt A #################
         args.prompt = prompt_A
         cicada = Cicada(
