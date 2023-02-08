@@ -99,7 +99,6 @@ def treebranch_initialization(
     drawing_area={'x0': 0, 'x1': 1, 'y0': 0, 'y1': 1},
     partition={'K1': 0.25, 'K2': 0.5, 'K3': 0.25},
 ):
-
     '''
     K1: % of curves starting from existing endpoints
     K2: % of curves starting from curves in K1
