@@ -74,6 +74,9 @@ for trial in range(args.num_trials):
 
         cicada.run_epoch()
 
+        if t == args.num_iter // 2 and args.area_kill:
+            cicada.mutate_area_kill()
+
         if t == args.num_iter // 2 and args.respawn_traces:
             cicada.mutate_respawn_traces()
 
