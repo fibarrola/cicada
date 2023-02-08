@@ -199,6 +199,12 @@ class Cicada:
         self.w_geo = w_geo
         self.w_global = w_global
 
+    def mutate_lr(self, increase_rate=5, num_iter=10):
+        self.initialize_optimizer(increase_rate)
+        for iter in range(num_iter):
+            self.run_epoch()
+        self.initialize_optimizer(1)
+
     def run_epoch(self, t="deprecated", num_augs=4):
         self.points_optim.zero_grad()
         self.width_optim.zero_grad()

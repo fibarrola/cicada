@@ -29,7 +29,7 @@ parser.add_argument("--max_width", type=int, help="max px width", default=40)
 
 # Algorithm parameters
 parser.add_argument(
-    "--num_iter", type=int, help="maximum algorithm iterations", default=1500
+    "--num_iter", type=int, help="maximum algorithm iterations", default=500
 )
 parser.add_argument(
     "--w_points",
@@ -85,6 +85,9 @@ parser.add_argument(
 )
 parser.add_argument(
     "--build_gif", type=bool, help="build a gif of the process", default=False
+)
+parser.add_argument(
+    "--lr_boost", type=bool, help="mutate using lr boost", default=False
 )
 
 args = parser.parse_args()
