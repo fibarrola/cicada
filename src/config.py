@@ -89,6 +89,9 @@ parser.add_argument(
 parser.add_argument(
     "--lr_boost", type=bool, help="mutate using lr boost", default=False
 )
+parser.add_argument(
+    "--respawn_traces", type=bool, help="mutate respawning traces", default=False
+)
 
 args = parser.parse_args()
 

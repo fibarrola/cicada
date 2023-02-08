@@ -97,6 +97,18 @@ class Drawing:
                 count += 1
         return shapes, shape_groups
 
+    def all_shapes_except(self, inds):
+        shapes = []
+        shape_groups = []
+        count = 0
+        for n, trace in enumerate(self.traces):
+            if n not in inds:
+                shapes.append(trace.shape)
+                trace.shape_group.shape_ids = torch.tensor([count])
+                shape_groups.append(trace.shape_group)
+                count += 1
+        return shapes, shape_groups
+
     def render_img(self):
         shapes = [trace.shape for trace in self.traces]
         shape_groups = [trace.shape_group for trace in self.traces]

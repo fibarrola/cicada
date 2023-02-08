@@ -9,6 +9,7 @@ from src.utils import get_nouns
 import torch
 import pydiffvg
 import copy
+import numpy as np
 
 pydiffvg.set_print_timing(False)
 pydiffvg.set_use_gpu(torch.cuda.is_available())
@@ -204,6 +205,35 @@ class Cicada:
         for iter in range(num_iter):
             self.run_epoch()
         self.initialize_optimizer(1)
+
+    @torch.no_grad()
+    def mutate_respawn_traces(self, rate=0.3, num_sets=10, num_augs=4):
+        unfixed_inds = [
+            k
+            for k in range(len(self.drawing.traces))
+            if not self.drawing.traces[k].is_fixed
+        ]
+        N = round(rate * len(unfixed_inds))
+        index_lists = [np.random.choice(unfixed_inds, N) for k in range(num_sets)]
+        losses = []
+        for idx_list in index_lists:
+            shapes, shape_groups = self.drawing.all_shapes_except(idx_list)
+            img = self.build_img(5, shapes, shape_groups)
+            img_augs = []
+            for n in range(num_augs):
+                img_augs.append(self.augment_trans(img))
+            im_batch = torch.cat(img_augs)
+            img_features = self.model.encode_image(im_batch)
+            loss = 0
+            for n in range(num_augs):
+                loss -= torch.cosine_similarity(
+                    self.text_features, img_features[n : n + 1], dim=1
+                )
+            losses.append(loss.cpu().item())
+
+        min_idx = np.argmin(losses)
+        self.drawing.remove_traces(index_lists[min_idx])
+        self.add_random_shapes(N)
 
     def run_epoch(self, t="deprecated", num_augs=4):
         self.points_optim.zero_grad()
