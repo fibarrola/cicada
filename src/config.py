@@ -92,6 +92,9 @@ parser.add_argument(
 parser.add_argument(
     "--respawn_traces", type=bool, help="mutate respawning traces", default=False
 )
+parser.add_argument(
+    "--area_kill", type=bool, help="mutate area kill", default=False
+)
 
 args = parser.parse_args()
 
