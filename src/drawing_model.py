@@ -239,24 +239,22 @@ class Cicada:
     def mutate_area_kill(self, grid_divs=5, num_augs=4):
         losses = []
         areas = []
-        for kx in range(grid_divs-1):
-            for ky in range(grid_divs-1):
+        for kx in range(grid_divs - 1):
+            for ky in range(grid_divs - 1):
                 area = {
-                    'x0': kx/grid_divs,
-                    'x1': (kx+2)/grid_divs,
-                    'y0': ky/grid_divs,
-                    'y1': (ky+2)/grid_divs
+                    'x0': kx / grid_divs,
+                    'x1': (kx + 2) / grid_divs,
+                    'y0': ky / grid_divs,
+                    'y1': (ky + 2) / grid_divs,
                 }
                 mask = utils.area_mask(
-                    self.drawing.canvas_width,
-                    self.drawing.canvas_height,
-                    area
+                    self.drawing.canvas_width, self.drawing.canvas_height, area
                 ).to(self.device)
                 loss = 0
                 img_augs = []
                 img = self.build_img(100000)
                 for n in range(num_augs):
-                    img_augs.append(self.augment_trans(img*mask))
+                    img_augs.append(self.augment_trans(img * mask))
 
                 im_batch = torch.cat(img_augs)
                 img_features = self.model.encode_image(im_batch)
@@ -268,12 +266,12 @@ class Cicada:
                 areas.append(area)
         dead_area = areas[np.argmin(losses)]
         dead_area = {
-            "x0": dead_area["x0"]*self.drawing.canvas_width,
-            "x1": dead_area["x1"]*self.drawing.canvas_width,
+            "x0": dead_area["x0"] * self.drawing.canvas_width,
+            "x1": dead_area["x1"] * self.drawing.canvas_width,
             # "y0":(1-dead_area["y1"])*self.drawing.canvas_height,
-            # "y1":(1-dead_area["y0"])*self.drawing.canvas_height,    
-            "y0": dead_area["y0"]*self.drawing.canvas_height,
-            "y1": dead_area["y1"]*self.drawing.canvas_height,        
+            # "y1":(1-dead_area["y0"])*self.drawing.canvas_height,
+            "y0": dead_area["y0"] * self.drawing.canvas_height,
+            "y1": dead_area["y1"] * self.drawing.canvas_height,
         }
         removal_inds = []
         for t, trace in enumerate(self.drawing.traces):
@@ -283,10 +281,9 @@ class Cicada:
                         if dead_area["y0"] < point[1] < dead_area["y1"]:
                             removal_inds.append(t)
                             break
-        
+
         self.drawing.remove_traces(removal_inds)
         self.add_random_shapes(len(removal_inds))
-
 
     def run_epoch(self, t="deprecated", num_augs=4):
         self.points_optim.zero_grad()
