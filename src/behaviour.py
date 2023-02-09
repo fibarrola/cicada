@@ -12,22 +12,16 @@ class TextBehaviour:
 
     @torch.no_grad()
     def add_behaviour(self, word_0, word_1):
-        z_0 = self.model.encode_text(
-                clip.tokenize(word_0).to(self.device)
-            )
-        z_1 = self.model.encode_text(
-                clip.tokenize(word_1).to(self.device)
-            )
-        self.behaviours.append({
-            "name": f"{word_0} vs {word_1}",
-            "z_0": z_0,
-            "z_1": z_1
-        })
+        z_0 = self.model.encode_text(clip.tokenize(word_0).to(self.device))
+        z_1 = self.model.encode_text(clip.tokenize(word_1).to(self.device))
+        self.behaviours.append(
+            {"name": f"{word_0} vs {word_1}", "z_0": z_0, "z_1": z_1}
+        )
 
     @torch.no_grad()
     def eval_behaviours(self, img, showme=False, num_augs=4):
         if img.shape[2] == 3:
-            img = img.unsqueeze(0).permute(0,3,1,2).to(self.device)
+            img = img.unsqueeze(0).permute(0, 3, 1, 2).to(self.device)
 
         im_batch = [self.augment_trans(img) for n in range(num_augs)]
         im_batch = torch.cat(im_batch)
@@ -46,5 +40,5 @@ class TextBehaviour:
             beh_scores.append(score)
             if showme:
                 print(f"{behaviour['name']} score: {score.item()}")
-        
+
         return torch.tensor(beh_scores)

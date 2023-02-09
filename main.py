@@ -67,7 +67,7 @@ for trial in range(args.num_trials):
 
     # Run the main optimization loop
     for t in range(args.num_iter):
-        if ((t + 1) % args.num_iter // 50):
+        if (t + 1) % args.num_iter // 50:
             with torch.no_grad():
                 pydiffvg.imwrite(
                     cicada.img,
@@ -117,9 +117,8 @@ for trial in range(args.num_trials):
     )
     utils.save_data(save_path, time_str, args)
 
-
     text_behaviour.eval_behaviours(cicada.img, showme=True)
-    
+
 if args.build_gif:
     gif_builder.build_gif(save_path + time_str)
 
