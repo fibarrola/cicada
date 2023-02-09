@@ -6,6 +6,7 @@ import time
 from src import utils
 from src.config import args
 from pathlib import Path
+from src.behaviour import TextBehaviour
 
 device = torch.device('cuda:0') if torch.cuda.is_available() else 'cpu'
 
@@ -15,6 +16,10 @@ save_path = Path("results/").joinpath(args.save_path)
 save_path.mkdir(parents=True, exist_ok=True)
 save_path = str(save_path) + '/'
 
+text_behaviour = TextBehaviour()
+text_behaviour.add_behaviour("drawing", "photo")
+text_behaviour.add_behaviour("simple", "complex")
+text_behaviour.add_behaviour("abstract", "realistic")
 
 t0 = time.time()
 
@@ -62,7 +67,7 @@ for trial in range(args.num_trials):
 
     # Run the main optimization loop
     for t in range(args.num_iter):
-        if (t + 1) % args.num_iter // 50:
+        if ((t + 1) % args.num_iter // 50):
             with torch.no_grad():
                 pydiffvg.imwrite(
                     cicada.img,
@@ -79,6 +84,7 @@ for trial in range(args.num_trials):
 
         if t == args.num_iter // 2 and args.respawn_traces:
             cicada.mutate_respawn_traces()
+            print("MUTATION")
 
         if t == args.num_iter // 2 and args.lr_boost:
             cicada.mutate_lr()
@@ -112,6 +118,8 @@ for trial in range(args.num_trials):
     utils.save_data(save_path, time_str, args)
 
 
+    text_behaviour.eval_behaviours(cicada.img, showme=True)
+    
 if args.build_gif:
     gif_builder.build_gif(save_path + time_str)
 
