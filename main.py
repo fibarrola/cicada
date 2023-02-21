@@ -78,7 +78,9 @@ for trial in range(args.num_trials):
                     gif_builder.add(cicada.img)
 
         cicada.run_epoch()
-
+        with open("results/mapelites/test.pkl","wb") as f:
+            pickle.dump(cicada.drawing, f)
+        assert False
         if t == args.num_iter // 2 and args.area_kill:
             cicada.mutate_area_kill()
 

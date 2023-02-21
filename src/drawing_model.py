@@ -25,11 +25,15 @@ class Cicada:
         drawing_area={'x0': 0, 'x1': 1, 'y0': 0, 'y1': 1},
         normalize_clip=True,
         max_width=40,
+        drawing=None
     ):
         self.device = device
         self.model, preprocess = clip.load('ViT-B/32', self.device, jit=False)
         self.clipConvLoss = CLIPConvLoss2(self.device)
-        self.drawing = Drawing(canvas_w, canvas_h)
+        if drawing is None:
+            self.drawing = Drawing(canvas_w, canvas_h)
+        else:
+            self.drawing = drawing
         self.augment_trans = get_augment_trans(
             self.drawing.canvas_width, normalize_clip
         )
