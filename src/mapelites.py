@@ -22,7 +22,7 @@ text_behaviour = TextBehaviour()
 behaviour_dims =[x.split("|") for x in args.behaviour_dims.split("||")]
 for bd in behaviour_dims:
     text_behaviour.add_behaviour(bd[0], bd[1])
-df = pd.DataFrame(columns=["fintess"]+[beh["name"] for beh in text_behaviour.behaviours])
+df = pd.DataFrame(columns=["in_population", "orig_iter", "fitness"]+[beh["name"] for beh in text_behaviour.behaviours])
 
 #
 # Aux
@@ -50,27 +50,75 @@ def run_cicada(cicada, args):
     
     loss = torch.mean(torch.cat(losses)).item()
     behs = torch.mean(torch.cat([b.unsqueeze(0) for b in behs]), dim=0)
-    data = [1-loss]+[b.item() for b in behs]
-    return data, cicada.drawing
+    fitness = 1-loss
+    behs = [b.item() for b in behs]
+    return fitness, behs, cicada.drawing
 
-#
+def id_check(id, grids):
+    for grid_name in grids:
+        for individual in grids[grid_name]["individuals"]:
+            if individual["id"] == id:
+                return True
+    return False
+
 #
 # MAPELITES
 #
-#
 
-#
 # Generate population
-#
-for k in range(args.population_size):
-    cicada = Cicada(
-        device=device,
-        drawing_area=args.drawing_area,
-        max_width=args.max_width,
-    )
+# for k in range(args.population_size):
+#     cicada = Cicada(
+#         device=device,
+#         drawing_area=args.drawing_area,
+#         max_width=args.max_width,
+#     )
     
-    data, drawing = run_cicada(cicada, args)
-    df.loc[drawing.id] = data
-    with open(f"{save_path}/{drawing.id}.pkl", "wb") as f:
-        pickle.dump(drawing, f)
-    df.to_csv(f"{save_path}/df.csv")
+#     fitness, behs, drawing = run_cicada(cicada, args)
+#     df.loc[drawing.id] = [False, 0, fitness] + behs
+#     with open(f"{save_path}/{drawing.id}.pkl", "wb") as f:
+#         pickle.dump(drawing, f)
+#     df.to_csv(f"{save_path}/df.csv", index_label="id")
+
+df = pd.read_csv("results/mapelites/chair_10/df.csv", index_col="id")
+
+# Build grids
+grids = {}
+for beh in text_behaviour.behaviours:
+    x = list(df[beh['name']])
+    mx = min(x)
+    Mx = max(x)
+    grid_min = mx - 0.1*(Mx-mx)
+    grid_max = Mx + 0.1*(Mx-mx)
+    grid = [grid_min + k*(grid_max-grid_min)/(args.grid_size-2) for k in range(args.grid_size-1)]
+    grids[beh['name']] = {
+        "values": grid,
+        "individuals": [{"id": None, "fitness":-1e5} for x in range(args.grid_size)],
+    }
+
+# Fill grids
+for id in df.index:
+    x = df.loc[id]
+    for grid_name in grids:
+        grid_idx = 0
+        for value in grids[grid_name]["values"]:     
+            if x[grid_name] < value:
+                break
+            else:
+                grid_idx += 1
+        
+        if grids[grid_name]["individuals"][grid_idx]["fitness"] < x["fitness"]:                
+            grids[grid_name]["individuals"][grid_idx]["id"] = id
+            grids[grid_name]["individuals"][grid_idx]["fitness"] = x["fitness"]
+
+print("Initial Population")
+for grid_name in grids:
+    print(grid_name)
+    print(grids[grid_name]["individuals"])
+print('')
+
+for id in df.index:
+    x = df.loc[id]
+    x["in_population"] = id_check(id, grids)
+    df.loc[id] = x
+
+print(df)
