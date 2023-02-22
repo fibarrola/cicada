@@ -1,7 +1,6 @@
 import io
 import PIL.Image
 import PIL.ImageDraw
-import base64
 import requests
 import numpy as np
 from IPython.display import Image

@@ -1,5 +1,6 @@
 import torch
 import pydiffvg
+import shortuuid
 
 
 class Trace:
@@ -15,6 +16,7 @@ class Drawing:
         self.canvas_height = canvas_height
         self.traces = []
         self.img = None
+        self.id = shortuuid.uuid()
 
     def add_paths(self, path_list):
         shapes = []
