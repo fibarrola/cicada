@@ -33,7 +33,13 @@ df = pd.DataFrame(
 #
 # Aux
 #
-def run_cicada(cicada, args, mutate=False):
+def run_cicada(args, drawing=None, mutate=False):
+    cicada = Cicada(
+        device=device,
+        drawing_area=args.drawing_area,
+        max_width=args.max_width,
+        drawing=drawing
+    )
     cicada.set_penalizers(
         w_points=args.w_points,
         w_colors=args.w_colors,
@@ -71,20 +77,31 @@ def id_check(id, grids):
                 return True
     return False
 
+def show_population(grids, name):
+    print(name)
+    for grid_name in grids:
+        print(grid_name)
+        for individual in grids[grid_name]["individuals"]:
+            print(individual)
+        print('')
+    print('')
+
+def get_grid_idx(new_beh, grids):
+    grid_idx = 0
+    for value in grids[grid_name]["values"]:
+        if new_beh < value:
+            break
+        else:
+            grid_idx += 1
+
+    return grid_idx
 
 #
 # MAPELITES
 #
-
 # Generate population
 for k in range(args.population_size):
-    cicada = Cicada(
-        device=device,
-        drawing_area=args.drawing_area,
-        max_width=args.max_width,
-    )
-
-    fitness, behs, drawing = run_cicada(cicada, args)
+    fitness, behs, drawing = run_cicada(args)
     df.loc[drawing.id] = [False, 0, fitness] + behs
     with open(f"{save_path}/{drawing.id}.pkl", "wb") as f:
         pickle.dump(drawing, f)
@@ -114,74 +131,48 @@ for beh in text_behaviour.behaviours:
 for id in df.index:
     x = df.loc[id]
     for grid_name in grids:
-        grid_idx = 0
-        for value in grids[grid_name]["values"]:
-            if x[grid_name] < value:
-                break
-            else:
-                grid_idx += 1
-
+        grid_idx = get_grid_idx(x[grid_name], grids)
         if grids[grid_name]["individuals"][grid_idx]["fitness"] < x["fitness"]:
             grids[grid_name]["individuals"][grid_idx]["id"] = id
             grids[grid_name]["individuals"][grid_idx]["fitness"] = x["fitness"]
 
-print("Initial Population")
-for grid_name in grids:
-    print(grid_name)
-    for individual in grids[grid_name]["individuals"]:
-        print(individual)
-    print('')
-print('')
-
 for id in df.index:
     df.at[id, "in_population"] = id_check(id, grids)
-    # x = df.loc[id]
-    # x["in_population"] = id_check(id, grids)
-    # df.loc[id] = x
+
+show_population(grids, "Initial Population")
+
+
 
 # Search
 for iter in range(args.mapelites_iters):
     mutant_id = random.choice(df[df["in_population"] == True].index)
     with open(f"{save_path}/{mutant_id}.pkl", "rb") as f:
         drawing = pickle.load(f)
-    new_id = shortuuid.uuid()
-    drawing.id = new_id
-    cicada = Cicada(
-        device=device,
-        drawing=drawing,
-        drawing_area=args.drawing_area,
-        max_width=args.max_width,
-    )
-    fitness, behs, drawing = run_cicada(cicada, args, mutate=True)
+    drawing.id = shortuuid.uuid()
+    fitness, behs, drawing = run_cicada(args, drawing=drawing, mutate=True)
+    in_population = False
     for k, grid_name in enumerate(grids):
-        new_beh = behs[k]
-        grid_idx = 0
-        for value in grids[grid_name]["values"]:
-            if new_beh < value:
-                break
-            else:
-                grid_idx += 1
+        grid_idx = get_grid_idx(behs[k], grids)
+        # If the new individual is fitter than the one in its behaviour grid
         if grids[grid_name]["individuals"][grid_idx]["fitness"] < fitness:
+            # Set to be added to population
+            in_population = True
+            # Remove previous individual, if not in other grid
+            old_id = grids[grid_name]["individuals"][grid_idx]["id"]
+            if not old_id is None:
+                df.at[old_id, "in_population"] = id_check(old_id, grids)
+            # Replace old individual with new
             grids[grid_name]["individuals"][grid_idx]["id"] = drawing.id
             grids[grid_name]["individuals"][grid_idx]["fitness"] = x["fitness"]
 
-    df.loc[drawing.id] = [False, iter + 1, fitness] + behs
+    df.loc[drawing.id] = [in_population, iter + 1, fitness] + behs
+
+    # save
     with open(f"{save_path}/{drawing.id}.pkl", "wb") as f:
         pickle.dump(drawing, f)
+    with open(f"{save_path}/grids.pkl", "wb") as f:
+        pickle.dump(grids, f)
     df.to_csv(f"{save_path}/df.csv", index_label="id")
 
-for id in df.index:
-    x = df.loc[id]
-    # x["in_population"] = id_check(id, grids)
-    # df.loc[id] = x
-    print(id_check(id, grids))
-    df.at[id, "in_population"] = id_check(id, grids)
+show_population(grids, "Final Population")
 
-print("Final Population")
-for grid_name in grids:
-    print(grid_name)
-    for individual in grids[grid_name]["individuals"]:
-        print(individual)
-    print('')
-print('')
-print(df)
