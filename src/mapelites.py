@@ -21,10 +21,14 @@ os.makedirs(save_path)
 delattr(args, "save_path")
 
 text_behaviour = TextBehaviour()
-behaviour_dims =[x.split("|") for x in args.behaviour_dims.split("||")]
+behaviour_dims = [x.split("|") for x in args.behaviour_dims.split("||")]
 for bd in behaviour_dims:
     text_behaviour.add_behaviour(bd[0], bd[1])
-df = pd.DataFrame(columns=["in_population", "orig_iter", "fitness"]+[beh["name"] for beh in text_behaviour.behaviours])
+df = pd.DataFrame(
+    columns=["in_population", "orig_iter", "fitness"]
+    + [beh["name"] for beh in text_behaviour.behaviours]
+)
+
 
 #
 # Aux
@@ -48,16 +52,17 @@ def run_cicada(cicada, args, mutate=False):
     behs = []
     for t in range(args.num_iter):
         cicada.run_epoch()
-        if t > args.num_iter-11:
+        if t > args.num_iter - 11:
             with torch.no_grad():
                 losses.append(cicada.losses["global"].detach())
                 behs.append(text_behaviour.eval_behaviours(cicada.img))
-    
+
     loss = torch.mean(torch.cat(losses)).item()
     behs = torch.mean(torch.cat([b.unsqueeze(0) for b in behs]), dim=0)
-    fitness = 1-loss
+    fitness = 1 - loss
     behs = [b.item() for b in behs]
     return fitness, behs, cicada.drawing
+
 
 def id_check(id, grids):
     for grid_name in grids:
@@ -65,6 +70,7 @@ def id_check(id, grids):
             if individual["id"] == id:
                 return True
     return False
+
 
 #
 # MAPELITES
@@ -77,7 +83,7 @@ for k in range(args.population_size):
         drawing_area=args.drawing_area,
         max_width=args.max_width,
     )
-    
+
     fitness, behs, drawing = run_cicada(cicada, args)
     df.loc[drawing.id] = [False, 0, fitness] + behs
     with open(f"{save_path}/{drawing.id}.pkl", "wb") as f:
@@ -93,12 +99,15 @@ for beh in text_behaviour.behaviours:
     x = list(df[beh['name']])
     mx = min(x)
     Mx = max(x)
-    grid_min = mx - 0.1*(Mx-mx)
-    grid_max = Mx + 0.1*(Mx-mx)
-    grid = [grid_min + k*(grid_max-grid_min)/(args.grid_size-2) for k in range(args.grid_size-1)]
+    grid_min = mx - 0.1 * (Mx - mx)
+    grid_max = Mx + 0.1 * (Mx - mx)
+    grid = [
+        grid_min + k * (grid_max - grid_min) / (args.grid_size - 2)
+        for k in range(args.grid_size - 1)
+    ]
     grids[beh['name']] = {
         "values": grid,
-        "individuals": [{"id": None, "fitness":-1e5} for x in range(args.grid_size)],
+        "individuals": [{"id": None, "fitness": -1e5} for x in range(args.grid_size)],
     }
 
 # Fill grids
@@ -106,13 +115,13 @@ for id in df.index:
     x = df.loc[id]
     for grid_name in grids:
         grid_idx = 0
-        for value in grids[grid_name]["values"]:     
+        for value in grids[grid_name]["values"]:
             if x[grid_name] < value:
                 break
             else:
                 grid_idx += 1
-        
-        if grids[grid_name]["individuals"][grid_idx]["fitness"] < x["fitness"]:                
+
+        if grids[grid_name]["individuals"][grid_idx]["fitness"] < x["fitness"]:
             grids[grid_name]["individuals"][grid_idx]["id"] = id
             grids[grid_name]["individuals"][grid_idx]["fitness"] = x["fitness"]
 
@@ -132,7 +141,7 @@ for id in df.index:
 
 # Search
 for iter in range(args.mapelites_iters):
-    mutant_id = random.choice(df[df["in_population"]==True].index)
+    mutant_id = random.choice(df[df["in_population"] == True].index)
     with open(f"{save_path}/{mutant_id}.pkl", "rb") as f:
         drawing = pickle.load(f)
     new_id = shortuuid.uuid()
@@ -147,16 +156,16 @@ for iter in range(args.mapelites_iters):
     for k, grid_name in enumerate(grids):
         new_beh = behs[k]
         grid_idx = 0
-        for value in grids[grid_name]["values"]:     
+        for value in grids[grid_name]["values"]:
             if new_beh < value:
                 break
             else:
                 grid_idx += 1
-        if grids[grid_name]["individuals"][grid_idx]["fitness"] < fitness:                
+        if grids[grid_name]["individuals"][grid_idx]["fitness"] < fitness:
             grids[grid_name]["individuals"][grid_idx]["id"] = drawing.id
             grids[grid_name]["individuals"][grid_idx]["fitness"] = x["fitness"]
-    
-    df.loc[drawing.id] = [False, iter+1, fitness] + behs
+
+    df.loc[drawing.id] = [False, iter + 1, fitness] + behs
     with open(f"{save_path}/{drawing.id}.pkl", "wb") as f:
         pickle.dump(drawing, f)
     df.to_csv(f"{save_path}/df.csv", index_label="id")

@@ -74,7 +74,7 @@ parser.add_argument(
     "--area_kill", type=bool, help="mutate area kill", default=False
 )
 parser.add_argument(
-    "--behaviour_dims", type=str, 
+    "--behaviour_dims", type=str,
     help="conditioning behaviour words. Pairs (separated by ||) of words (separated by |)",
     default="drawing|photo||simple|complex||abstract|realistic"
 )

@@ -9,6 +9,7 @@ class Trace:
         self.shape_group = shape_group
         self.is_fixed = is_fixed
 
+
 class Drawing:
     def __init__(self, canvas_width, canvas_height):
         self.canvas_width = canvas_width

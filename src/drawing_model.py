@@ -25,7 +25,7 @@ class Cicada:
         drawing_area={'x0': 0, 'x1': 1, 'y0': 0, 'y1': 1},
         normalize_clip=True,
         max_width=40,
-        drawing=None
+        drawing=None,
     ):
         self.device = device
         self.model, preprocess = clip.load('ViT-B/32', self.device, jit=False)
