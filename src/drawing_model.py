@@ -31,7 +31,6 @@ class Cicada:
         self.model, preprocess = clip.load('ViT-B/32', self.device, jit=False)
         self.clipConvLoss = CLIPConvLoss2(self.device)
         if drawing is None:
-            print('creating...')
             self.drawing = Drawing(canvas_w, canvas_h)
         else:
             self.drawing = drawing

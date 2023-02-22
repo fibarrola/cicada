@@ -10,7 +10,14 @@ from behaviour import TextBehaviour
 # Preliminaries
 #
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
-os.makedirs(args.save_path, exist_ok=True)
+
+k = 0
+while os.path.exists(f"{args.save_path}_{k}"):
+    k += 1
+save_path = f"{args.save_path}_{k}"
+os.makedirs(save_path)
+delattr(args, "save_path")
+
 text_behaviour = TextBehaviour()
 behaviour_dims =[x.split("|") for x in args.behaviour_dims.split("||")]
 for bd in behaviour_dims:
@@ -64,6 +71,6 @@ for k in range(args.population_size):
     
     data, drawing = run_cicada(cicada, args)
     df.loc[drawing.id] = data
-    with open(f"{args.save_path}/{drawing.id}.pkl", "wb") as f:
+    with open(f"{save_path}/{drawing.id}.pkl", "wb") as f:
         pickle.dump(drawing, f)
-    df.to_csv(f"{args.save_path}/df.csv")
+    df.to_csv(f"{save_path}/df.csv")
