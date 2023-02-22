@@ -9,7 +9,7 @@ parser.add_argument(
     help="path to svg partial sketch",
     default="data/drawing_chair.svg",
 )
-parser.add_argument("--population_size", type=int, default=6)
+parser.add_argument("--population_size", type=int, default=8)
 parser.add_argument(
     "--prompt", type=str, help="what to draw", default="A red chair."
 )
@@ -81,7 +81,9 @@ parser.add_argument(
 parser.add_argument(
     "--grid_size", type=int, help="number of grid squares per behaviour dimension", default=5
 )
-
+parser.add_argument(
+    "--mapelites_iters", type=int, help="mapelite iterations", default=12
+)
 args = parser.parse_args()
 
 args.drawing_area = {'x0': args.x0, 'x1': args.x1, 'y0': args.y0, 'y1': args.y1}

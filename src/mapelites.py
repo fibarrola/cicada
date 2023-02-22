@@ -1,6 +1,8 @@
 import os
 import pickle
 import torch
+import random
+import shortuuid
 import pandas as pd
 from mapelites_config import args
 from drawing_model import Cicada
@@ -27,7 +29,7 @@ df = pd.DataFrame(columns=["in_population", "orig_iter", "fitness"]+[beh["name"]
 #
 # Aux
 #
-def run_cicada(cicada, args):
+def run_cicada(cicada, args, mutate=False):
     cicada.set_penalizers(
         w_points=args.w_points,
         w_colors=args.w_colors,
@@ -35,10 +37,13 @@ def run_cicada(cicada, args):
         w_geo=args.w_geo,
     )
     cicada.process_text(args.prompt)
-    cicada.load_svg_shapes(args.svg_path)
-    cicada.add_random_shapes(args.num_paths)
+    if not mutate:
+        cicada.load_svg_shapes(args.svg_path)
+        cicada.add_random_shapes(args.num_paths)
     cicada.initialize_variables()
     cicada.initialize_optimizer()
+    if mutate:
+        cicada.mutate_respawn_traces()
     losses = []
     behs = []
     for t in range(args.num_iter):
@@ -66,20 +71,21 @@ def id_check(id, grids):
 #
 
 # Generate population
-# for k in range(args.population_size):
-#     cicada = Cicada(
-#         device=device,
-#         drawing_area=args.drawing_area,
-#         max_width=args.max_width,
-#     )
+for k in range(args.population_size):
+    cicada = Cicada(
+        device=device,
+        drawing_area=args.drawing_area,
+        max_width=args.max_width,
+    )
     
-#     fitness, behs, drawing = run_cicada(cicada, args)
-#     df.loc[drawing.id] = [False, 0, fitness] + behs
-#     with open(f"{save_path}/{drawing.id}.pkl", "wb") as f:
-#         pickle.dump(drawing, f)
-#     df.to_csv(f"{save_path}/df.csv", index_label="id")
+    fitness, behs, drawing = run_cicada(cicada, args)
+    df.loc[drawing.id] = [False, 0, fitness] + behs
+    with open(f"{save_path}/{drawing.id}.pkl", "wb") as f:
+        pickle.dump(drawing, f)
+    df.to_csv(f"{save_path}/df.csv", index_label="id")
 
-df = pd.read_csv("results/mapelites/chair_10/df.csv", index_col="id")
+# df = pd.read_csv("results/mapelites/chair_10/df.csv", index_col="id")
+# save_path = "results/mapelites/chair_10"
 
 # Build grids
 grids = {}
@@ -113,12 +119,60 @@ for id in df.index:
 print("Initial Population")
 for grid_name in grids:
     print(grid_name)
-    print(grids[grid_name]["individuals"])
+    for individual in grids[grid_name]["individuals"]:
+        print(individual)
+    print('')
 print('')
 
 for id in df.index:
-    x = df.loc[id]
-    x["in_population"] = id_check(id, grids)
-    df.loc[id] = x
+    df.at[id, "in_population"] = id_check(id, grids)
+    # x = df.loc[id]
+    # x["in_population"] = id_check(id, grids)
+    # df.loc[id] = x
 
+# Search
+for iter in range(args.mapelites_iters):
+    mutant_id = random.choice(df[df["in_population"]==True].index)
+    with open(f"{save_path}/{mutant_id}.pkl", "rb") as f:
+        drawing = pickle.load(f)
+    new_id = shortuuid.uuid()
+    drawing.id = new_id
+    cicada = Cicada(
+        device=device,
+        drawing=drawing,
+        drawing_area=args.drawing_area,
+        max_width=args.max_width,
+    )
+    fitness, behs, drawing = run_cicada(cicada, args, mutate=True)
+    for k, grid_name in enumerate(grids):
+        new_beh = behs[k]
+        grid_idx = 0
+        for value in grids[grid_name]["values"]:     
+            if new_beh < value:
+                break
+            else:
+                grid_idx += 1
+        if grids[grid_name]["individuals"][grid_idx]["fitness"] < fitness:                
+            grids[grid_name]["individuals"][grid_idx]["id"] = drawing.id
+            grids[grid_name]["individuals"][grid_idx]["fitness"] = x["fitness"]
+    
+    df.loc[drawing.id] = [False, iter+1, fitness] + behs
+    with open(f"{save_path}/{drawing.id}.pkl", "wb") as f:
+        pickle.dump(drawing, f)
+    df.to_csv(f"{save_path}/df.csv", index_label="id")
+
+for id in df.index:
+    x = df.loc[id]
+    # x["in_population"] = id_check(id, grids)
+    # df.loc[id] = x
+    print(id_check(id, grids))
+    df.at[id, "in_population"] = id_check(id, grids)
+
+print("Final Population")
+for grid_name in grids:
+    print(grid_name)
+    for individual in grids[grid_name]["individuals"]:
+        print(individual)
+    print('')
+print('')
 print(df)
