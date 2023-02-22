@@ -136,6 +136,7 @@ olds/
 tmp/
 build/
 results/*
+results/
 pngs/
 svgs/
 # experiments/

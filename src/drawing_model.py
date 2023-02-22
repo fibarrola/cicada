@@ -1,7 +1,7 @@
 from src import utils
 from src.loss import CLIPConvLoss2
 from src.render_design import treebranch_initialization
-from src.drawing import Drawing
+from drawing import Drawing
 from src.processing import get_augment_trans
 from src.svg_extraction import get_drawing_paths
 import clip
@@ -31,6 +31,7 @@ class Cicada:
         self.model, preprocess = clip.load('ViT-B/32', self.device, jit=False)
         self.clipConvLoss = CLIPConvLoss2(self.device)
         if drawing is None:
+            print('creating...')
             self.drawing = Drawing(canvas_w, canvas_h)
         else:
             self.drawing = drawing

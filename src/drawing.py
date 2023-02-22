@@ -1,5 +1,6 @@
 import torch
 import pydiffvg
+import shortuuid
 
 
 class Trace:
@@ -8,13 +9,13 @@ class Trace:
         self.shape_group = shape_group
         self.is_fixed = is_fixed
 
-
 class Drawing:
     def __init__(self, canvas_width, canvas_height):
         self.canvas_width = canvas_width
         self.canvas_height = canvas_height
         self.traces = []
         self.img = None
+        self.id = shortuuid.uuid()
 
     def add_paths(self, path_list):
         shapes = []
