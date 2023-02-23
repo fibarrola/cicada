@@ -3,6 +3,7 @@ import pickle
 import torch
 import random
 import shortuuid
+import pydiffvg
 import pandas as pd
 from mapelites_config import args
 from drawing_model import Cicada
@@ -18,6 +19,8 @@ while os.path.exists(f"{args.save_path}_{k}"):
     k += 1
 save_path = f"{args.save_path}_{k}"
 os.makedirs(save_path)
+os.makedirs(save_path+"/initial_population")
+os.makedirs(save_path+"/final_population")
 delattr(args, "save_path")
 
 text_behaviour = TextBehaviour()
@@ -86,6 +89,24 @@ def show_population(grids, name):
         print('')
     print('')
 
+def plot_population(grids, name):
+    for grid_name in grids:
+        print(grid_name)
+        for i, individual in enumerate(grids[grid_name]["individuals"]):
+            if individual["id"] is None:
+                img = torch.ones((224,224,3), device="cpu", requires_grad=False)
+            else:
+                with open(f"{save_path}/{individual['id']}.pkl", "rb") as f:
+                    drawing = pickle.load(f)
+                drawing.render_img()
+                img = drawing.img.cpu().permute(0, 2, 3, 1).squeeze(0)
+
+            pydiffvg.imwrite(
+                img,
+                f"{save_path}/{name}/{grid_name.replace(' ','_')}_{i}.png",
+                gamma=1,
+            )
+
 def get_grid_idx(new_beh, grids):
     grid_idx = 0
     for value in grids[grid_name]["values"]:
@@ -106,7 +127,7 @@ for k in range(args.population_size):
     with open(f"{save_path}/{drawing.id}.pkl", "wb") as f:
         pickle.dump(drawing, f)
     df.to_csv(f"{save_path}/df.csv", index_label="id")
-
+ 
 # df = pd.read_csv("results/mapelites/chair_10/df.csv", index_col="id")
 # save_path = "results/mapelites/chair_10"
 
@@ -140,6 +161,7 @@ for id in df.index:
     df.at[id, "in_population"] = id_check(id, grids)
 
 show_population(grids, "Initial Population")
+plot_population(grids, "initial_population")
 
 
 
@@ -175,4 +197,5 @@ for iter in range(args.mapelites_iters):
     df.to_csv(f"{save_path}/df.csv", index_label="id")
 
 show_population(grids, "Final Population")
+plot_population(grids, "final_population")
 

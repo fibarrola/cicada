@@ -303,6 +303,7 @@ class Cicada:
         )
 
         self.img = img.cpu().permute(0, 2, 3, 1).squeeze(0)
+        # self.drawing.img = self.img
 
         loss = 0
 
