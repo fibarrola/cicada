@@ -19,7 +19,7 @@ parser.add_argument(
 parser.add_argument("--max_width", type=int, help="max px width", default=40)
 
 parser.add_argument(
-    "--num_iter", type=int, help="maximum algorithm iterations", default=500
+    "--num_iter", type=int, help="maximum algorithm iterations", default=1000
 )
 parser.add_argument(
     "--w_points",
@@ -82,7 +82,7 @@ parser.add_argument(
     "--grid_size", type=int, help="number of grid squares per behaviour dimension", default=5
 )
 parser.add_argument(
-    "--mapelites_iters", type=int, help="mapelite iterations", default=12
+    "--mapelites_iters", type=int, help="mapelite iterations", default=32
 )
 args = parser.parse_args()
 

@@ -3,6 +3,7 @@ import pickle
 import torch
 import random
 import shortuuid
+import pydiffvg
 import pandas as pd
 from mapelites_config import args
 from drawing_model import Cicada
@@ -18,6 +19,8 @@ while os.path.exists(f"{args.save_path}_{k}"):
     k += 1
 save_path = f"{args.save_path}_{k}"
 os.makedirs(save_path)
+os.makedirs(save_path + "/initial_population")
+os.makedirs(save_path + "/final_population")
 delattr(args, "save_path")
 
 text_behaviour = TextBehaviour()
@@ -38,7 +41,7 @@ def run_cicada(args, drawing=None, mutate=False):
         device=device,
         drawing_area=args.drawing_area,
         max_width=args.max_width,
-        drawing=drawing
+        drawing=drawing,
     )
     cicada.set_penalizers(
         w_points=args.w_points,
@@ -77,6 +80,7 @@ def id_check(id, grids):
                 return True
     return False
 
+
 def show_population(grids, name):
     print(name)
     for grid_name in grids:
@@ -85,6 +89,26 @@ def show_population(grids, name):
             print(individual)
         print('')
     print('')
+
+
+def plot_population(grids, name):
+    for grid_name in grids:
+        print(grid_name)
+        for i, individual in enumerate(grids[grid_name]["individuals"]):
+            if individual["id"] is None:
+                img = torch.ones((224, 224, 3), device="cpu", requires_grad=False)
+            else:
+                with open(f"{save_path}/{individual['id']}.pkl", "rb") as f:
+                    drawing = pickle.load(f)
+                drawing.render_img()
+                img = drawing.img.cpu().permute(0, 2, 3, 1).squeeze(0)
+
+            pydiffvg.imwrite(
+                img,
+                f"{save_path}/{name}/{grid_name.replace(' ','_')}_{i}.png",
+                gamma=1,
+            )
+
 
 def get_grid_idx(new_beh, grids):
     grid_idx = 0
@@ -95,6 +119,7 @@ def get_grid_idx(new_beh, grids):
             grid_idx += 1
 
     return grid_idx
+
 
 #
 # MAPELITES
@@ -140,7 +165,7 @@ for id in df.index:
     df.at[id, "in_population"] = id_check(id, grids)
 
 show_population(grids, "Initial Population")
-
+plot_population(grids, "initial_population")
 
 
 # Search
@@ -159,7 +184,7 @@ for iter in range(args.mapelites_iters):
             in_population = True
             # Remove previous individual, if not in other grid
             old_id = grids[grid_name]["individuals"][grid_idx]["id"]
-            if not old_id is None:
+            if old_id is not None:
                 df.at[old_id, "in_population"] = id_check(old_id, grids)
             # Replace old individual with new
             grids[grid_name]["individuals"][grid_idx]["id"] = drawing.id
@@ -175,4 +200,4 @@ for iter in range(args.mapelites_iters):
     df.to_csv(f"{save_path}/df.csv", index_label="id")
 
 show_population(grids, "Final Population")
-
+plot_population(grids, "final_population")
