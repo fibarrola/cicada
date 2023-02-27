@@ -5,6 +5,8 @@ import random
 import shortuuid
 import pydiffvg
 import pandas as pd
+import src.fid_score as fid
+from utils import tie
 from mapelites_config import args
 from drawing_model import Cicada
 from behaviour import TextBehaviour
@@ -166,7 +168,11 @@ for id in df.index:
 
 show_population(grids, "Initial Population")
 plot_population(grids, "initial_population")
-
+mu, S = fid.get_statistics(
+    f"{save_path}/initial_population",
+    rand_sampled_set_dim=10,
+)
+print('Entropy: ', tie(S))
 
 # Search
 for iter in range(args.mapelites_iters):
@@ -201,3 +207,8 @@ for iter in range(args.mapelites_iters):
 
 show_population(grids, "Final Population")
 plot_population(grids, "final_population")
+mu, S = fid.get_statistics(
+    f"{save_path}/final_population",
+    rand_sampled_set_dim=10,
+)
+print('Entropy: ', tie(S))
