@@ -76,7 +76,7 @@ parser.add_argument(
 parser.add_argument(
     "--behaviour_dims", type=str,
     help="conditioning behaviour words. Pairs (separated by ||) of words (separated by |)",
-    default="drawing|photo||simple|complex||abstract|realistic"
+    default="abstract drawing|realistic photo||simple|complex"
 )
 parser.add_argument(
     "--grid_size", type=int, help="number of grid squares per behaviour dimension", default=5

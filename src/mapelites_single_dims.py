@@ -112,15 +112,15 @@ def plot_population(grids, name):
             )
 
 
-# def get_grid_idx(new_beh, grids):
-#     grid_idx = 0
-#     for value in grids[grid_name]["values"]:
-#         if new_beh < value:
-#             break
-#         else:
-#             grid_idx += 1
+def get_grid_idx(new_beh, grids):
+    grid_idx = 0
+    for value in grids[grid_name]["values"]:
+        if new_beh < value:
+            break
+        else:
+            grid_idx += 1
 
-#     return grid_idx
+    return grid_idx
 
 
 #
@@ -136,49 +136,6 @@ for k in range(args.population_size):
 
 # df = pd.read_csv("results/mapelites/chair_10/df.csv", index_col="id")
 # save_path = "results/mapelites/chair_10"
-
-class Grid:
-    def __init__(self):
-        self.id_mat = None
-        self.fit_mat = -1e5
-        self.dims = {}
-
-    def add_scale(self, dim_name, value_list, num_slots):
-        mx = min(value_list)
-        Mx = max(value_list)
-        grid_min = mx - 0.1 * (Mx - mx)
-        grid_max = Mx + 0.1 * (Mx - mx)
-        values = [
-            grid_min + k * (grid_max - grid_min) / (num_slots - 2)
-            for k in range(num_slots - 1)
-        ]
-        self.dims[dim_name] = values
-        self.id_mat = [self.id_mat for k in range(num_slots)]
-        self.fit_mat = [self.fit_mat for k in range(num_slots)]
-
-    def get_grid_idx(self, beh, dim_name):
-        grid_idx = 0
-        for value in self.dims[dim_name]:
-            if beh < value:
-                break
-            else:
-                grid_idx += 1
-
-        return grid_idx
-    
-    def allocate(self, id, behs, fitness):
-        grid_idx = []
-        for d, dim_name in enumerate(self.dims):
-            grid_idx.append(self.get_grid_idx(behs[d], dim_name))
-        
-        # Can I use a list as multi list idx?
-        if fitness < self.fit_mat[grid_idx]:
-            self.fit_mat[grid_idx] = fitness
-            self.id_mat = id
-
-
-
-    
 
 # Build grids
 grids = {}
