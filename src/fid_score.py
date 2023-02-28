@@ -33,8 +33,6 @@ limitations under the License.
 """
 import os
 import pathlib
-from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
-
 import numpy as np
 import torch
 import torchvision.transforms as TF
@@ -50,35 +48,7 @@ except ImportError:
     def tqdm(x):
         return x
 
-
 from .inception import InceptionV3
-
-parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
-parser.add_argument('--batch-size', type=int, default=5, help='Batch size to use')
-parser.add_argument(
-    '--num-workers',
-    type=int,
-    help=(
-        'Number of processes to use for data loading. ' 'Defaults to `min(8, num_cpus)`'
-    ),
-)
-parser.add_argument(
-    '--device', type=str, default=None, help='Device to use. Like cuda, cuda:0 or cpu'
-)
-parser.add_argument(
-    '--dims',
-    type=int,
-    default=2048,
-    choices=list(InceptionV3.BLOCK_INDEX_BY_DIM),
-    help=(
-        'Dimensionality of Inception features to use. '
-        'By default, uses pool3 features'
-    ),
-)
-# parser.add_argument('path', type=str, nargs=2,
-#                     help=('Paths to the generated images or '
-#                           'to .npz statistic files'))
-
 IMAGE_EXTENSIONS = {'bmp', 'jpg', 'jpeg', 'pgm', 'png', 'ppm', 'tif', 'tiff', 'webp'}
 
 
@@ -164,64 +134,64 @@ def get_activations(
     return pred_arr
 
 
-def calculate_frechet_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):
-    """Numpy implementation of the Frechet Distance.
-    The Frechet distance between two multivariate Gaussians X_1 ~ N(mu_1, C_1)
-    and X_2 ~ N(mu_2, C_2) is
-            d^2 = ||mu_1 - mu_2||^2 + Tr(C_1 + C_2 - 2*sqrt(C_1*C_2)).
+# def calculate_frechet_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):
+#     """Numpy implementation of the Frechet Distance.
+#     The Frechet distance between two multivariate Gaussians X_1 ~ N(mu_1, C_1)
+#     and X_2 ~ N(mu_2, C_2) is
+#             d^2 = ||mu_1 - mu_2||^2 + Tr(C_1 + C_2 - 2*sqrt(C_1*C_2)).
 
-    Stable version by Dougal J. Sutherland.
+#     Stable version by Dougal J. Sutherland.
 
-    Params:
-    -- mu1   : Numpy array containing the activations of a layer of the
-               inception net (like returned by the function 'get_predictions')
-               for generated samples.
-    -- mu2   : The sample mean over activations, precalculated on an
-               representative data set.
-    -- sigma1: The covariance matrix over activations for generated samples.
-    -- sigma2: The covariance matrix over activations, precalculated on an
-               representative data set.
+#     Params:
+#     -- mu1   : Numpy array containing the activations of a layer of the
+#                inception net (like returned by the function 'get_predictions')
+#                for generated samples.
+#     -- mu2   : The sample mean over activations, precalculated on an
+#                representative data set.
+#     -- sigma1: The covariance matrix over activations for generated samples.
+#     -- sigma2: The covariance matrix over activations, precalculated on an
+#                representative data set.
 
-    Returns:
-    --   : The Frechet Distance.
-    """
+#     Returns:
+#     --   : The Frechet Distance.
+#     """
 
-    mu1 = np.atleast_1d(mu1)
-    mu2 = np.atleast_1d(mu2)
+#     mu1 = np.atleast_1d(mu1)
+#     mu2 = np.atleast_1d(mu2)
 
-    sigma1 = np.atleast_2d(sigma1)
-    sigma2 = np.atleast_2d(sigma2)
+#     sigma1 = np.atleast_2d(sigma1)
+#     sigma2 = np.atleast_2d(sigma2)
 
-    assert (
-        mu1.shape == mu2.shape
-    ), 'Training and test mean vectors have different lengths'
-    assert (
-        sigma1.shape == sigma2.shape
-    ), 'Training and test covariances have different dimensions'
+#     assert (
+#         mu1.shape == mu2.shape
+#     ), 'Training and test mean vectors have different lengths'
+#     assert (
+#         sigma1.shape == sigma2.shape
+#     ), 'Training and test covariances have different dimensions'
 
-    diff = mu1 - mu2
+#     diff = mu1 - mu2
 
-    # Product might be almost singular
-    covmean, _ = linalg.sqrtm(sigma1.dot(sigma2), disp=False)
-    if not np.isfinite(covmean).all():
-        msg = (
-            'fid calculation produces singular product; '
-            'adding %s to diagonal of cov estimates'
-        ) % eps
-        print(msg)
-        offset = np.eye(sigma1.shape[0]) * eps
-        covmean = linalg.sqrtm((sigma1 + offset).dot(sigma2 + offset))
+#     # Product might be almost singular
+#     covmean, _ = linalg.sqrtm(sigma1.dot(sigma2), disp=False)
+#     if not np.isfinite(covmean).all():
+#         msg = (
+#             'fid calculation produces singular product; '
+#             'adding %s to diagonal of cov estimates'
+#         ) % eps
+#         print(msg)
+#         offset = np.eye(sigma1.shape[0]) * eps
+#         covmean = linalg.sqrtm((sigma1 + offset).dot(sigma2 + offset))
 
-    # Numerical error might give slight imaginary component
-    if np.iscomplexobj(covmean):
-        if not np.allclose(np.diagonal(covmean).imag, 0, atol=1e-3):
-            m = np.max(np.abs(covmean.imag))
-            raise ValueError('Imaginary component {}'.format(m))
-        covmean = covmean.real
+#     # Numerical error might give slight imaginary component
+#     if np.iscomplexobj(covmean):
+#         if not np.allclose(np.diagonal(covmean).imag, 0, atol=1e-3):
+#             m = np.max(np.abs(covmean.imag))
+#             raise ValueError('Imaginary component {}'.format(m))
+#         covmean = covmean.real
 
-    tr_covmean = np.trace(covmean)
+#     tr_covmean = np.trace(covmean)
 
-    return diff.dot(diff) + np.trace(sigma1) + np.trace(sigma2) - 2 * tr_covmean
+#     return diff.dot(diff) + np.trace(sigma1) + np.trace(sigma2) - 2 * tr_covmean
 
 
 def calculate_activation_statistics(
@@ -272,130 +242,98 @@ def compute_statistics_of_path(
     return m, s
 
 
-def partition_and_compute_statistics(
-    path, model, batch_size, dims, device, num_workers=1
-):
+# def partition_and_compute_statistics(
+#     path, model, batch_size, dims, device, num_workers=1
+# ):
 
-    path = pathlib.Path(path)
-    files = sorted(
-        [file for ext in IMAGE_EXTENSIONS for file in path.glob('*.{}'.format(ext))]
-    )
-    # print(files)
-    random.shuffle(files)
-    # print(files)
-    # assert False
-    N = len(files) // 2
-    m1, s1 = calculate_activation_statistics(
-        files[:N], model, batch_size, dims, device, num_workers
-    )
-    m2, s2 = calculate_activation_statistics(
-        files[N:], model, batch_size, dims, device, num_workers
-    )
+#     path = pathlib.Path(path)
+#     files = sorted(
+#         [file for ext in IMAGE_EXTENSIONS for file in path.glob('*.{}'.format(ext))]
+#     )
+#     random.shuffle(files)
+#     N = len(files) // 2
+#     m1, s1 = calculate_activation_statistics(
+#         files[:N], model, batch_size, dims, device, num_workers
+#     )
+#     m2, s2 = calculate_activation_statistics(
+#         files[N:], model, batch_size, dims, device, num_workers
+#     )
 
-    return m1, s1, m2, s2
+#     return m1, s1, m2, s2
 
 
-def calculate_fid_within_path(path, batch_size, device, dims, num_workers=1):
-    """Calculates the FID of two paths"""
-    if not os.path.exists(path):
-        raise RuntimeError('Invalid path: %s' % path)
+# def calculate_fid_within_path(path, batch_size, device, dims, num_workers=1):
+#     """Calculates the FID of two paths"""
+#     if not os.path.exists(path):
+#         raise RuntimeError('Invalid path: %s' % path)
+
+#     block_idx = InceptionV3.BLOCK_INDEX_BY_DIM[dims]
+
+#     model = InceptionV3([block_idx]).to(device)
+
+#     m1, s1, m2, s2 = partition_and_compute_statistics(
+#         path, model, batch_size, dims, device, num_workers
+#     )
+#     fid_value = calculate_frechet_distance(m1, s1, m2, s2)
+
+#     return fid_value
+
+
+# def calculate_fid_given_paths(paths, batch_size, device, dims, num_workers=1):
+#     """Calculates the FID of two paths"""
+#     for p in paths:
+#         if not os.path.exists(p):
+#             raise RuntimeError('Invalid path: %s' % p)
+
+#     block_idx = InceptionV3.BLOCK_INDEX_BY_DIM[dims]
+
+#     model = InceptionV3([block_idx]).to(device)
+
+#     m1, s1 = compute_statistics_of_path(
+#         paths[0], model, batch_size, dims, device, None, num_workers
+#     )
+#     m2, s2 = compute_statistics_of_path(
+#         paths[1], model, batch_size, dims, device, None, num_workers
+#     )
+#     fid_value = calculate_frechet_distance(m1, s1, m2, s2)
+
+#     return fid_value
+
+
+# def main(paths, dims=2048, batch_size=5):
+#     device = torch.device('cuda' if (torch.cuda.is_available()) else 'cpu')
+#     num_avail_cpus = len(os.sched_getaffinity(0))
+#     num_workers = min(num_avail_cpus, 8)
+#     fid_value = calculate_fid_given_paths(
+#         paths, batch_size, device, dims, num_workers
+#     )
+#     print('FID: ', fid_value)
+#     return fid_value
+
+
+# def main_within(path, dims=2048, batch_size=5):
+#     device = torch.device('cuda' if (torch.cuda.is_available()) else 'cpu')
+#     num_avail_cpus = len(os.sched_getaffinity(0))
+#     num_workers = min(num_avail_cpus, 8)
+#     fid_value = calculate_fid_within_path(
+#         path, batch_size, device, dims, num_workers
+#     )
+#     return fid_value
+
+
+def get_statistics(path, rand_sampled_set_dim=None, dims=2048, batch_size=5):
+    device = torch.device('cuda' if (torch.cuda.is_available()) else 'cpu')
+    num_avail_cpus = len(os.sched_getaffinity(0))
+    num_workers = min(num_avail_cpus, 8)
 
     block_idx = InceptionV3.BLOCK_INDEX_BY_DIM[dims]
-
-    model = InceptionV3([block_idx]).to(device)
-
-    m1, s1, m2, s2 = partition_and_compute_statistics(
-        path, model, batch_size, dims, device, num_workers
-    )
-    fid_value = calculate_frechet_distance(m1, s1, m2, s2)
-
-    return fid_value
-
-
-def calculate_fid_given_paths(paths, batch_size, device, dims, num_workers=1):
-    """Calculates the FID of two paths"""
-    for p in paths:
-        if not os.path.exists(p):
-            raise RuntimeError('Invalid path: %s' % p)
-
-    block_idx = InceptionV3.BLOCK_INDEX_BY_DIM[dims]
-
-    model = InceptionV3([block_idx]).to(device)
-
-    m1, s1 = compute_statistics_of_path(
-        paths[0], model, batch_size, dims, device, None, num_workers
-    )
-    m2, s2 = compute_statistics_of_path(
-        paths[1], model, batch_size, dims, device, None, num_workers
-    )
-    fid_value = calculate_frechet_distance(m1, s1, m2, s2)
-
-    return fid_value
-
-
-def main(paths=None):
-    args = parser.parse_args()
-
-    if args.device is None:
-        device = torch.device('cuda' if (torch.cuda.is_available()) else 'cpu')
-    else:
-        device = torch.device(args.device)
-
-    if args.num_workers is None:
-        num_avail_cpus = len(os.sched_getaffinity(0))
-        num_workers = min(num_avail_cpus, 8)
-    else:
-        num_workers = args.num_workers
-
-    if not paths:
-        paths = args.path
-
-    fid_value = calculate_fid_given_paths(
-        paths, args.batch_size, device, args.dims, num_workers
-    )
-    print('FID: ', fid_value)
-    return fid_value
-
-
-def main_within(path):
-    args = parser.parse_args()
-
-    if args.device is None:
-        device = torch.device('cuda' if (torch.cuda.is_available()) else 'cpu')
-    else:
-        device = torch.device(args.device)
-
-    if args.num_workers is None:
-        num_avail_cpus = len(os.sched_getaffinity(0))
-        num_workers = min(num_avail_cpus, 8)
-    else:
-        num_workers = args.num_workers
-
-    fid_value = calculate_fid_within_path(
-        path, args.batch_size, device, args.dims, num_workers
-    )
-    return fid_value
-
-
-def get_statistics(path, rand_sampled_set_dim=None):
-    args = parser.parse_args()
-    if args.device is None:
-        device = torch.device('cuda' if (torch.cuda.is_available()) else 'cpu')
-    else:
-        device = torch.device(args.device)
-    if args.num_workers is None:
-        num_avail_cpus = len(os.sched_getaffinity(0))
-        num_workers = min(num_avail_cpus, 8)
-    else:
-        num_workers = args.num_workers
-    block_idx = InceptionV3.BLOCK_INDEX_BY_DIM[args.dims]
     model = InceptionV3([block_idx]).to(device)
 
     m, s = compute_statistics_of_path(
         path,
         model,
-        args.batch_size,
-        args.dims,
+        batch_size,
+        dims,
         device,
         rand_sampled_set_dim,
         num_workers,
