@@ -112,7 +112,6 @@ class Grid:
             grid_idx.append(self.get_grid_idx(behs[d], dim_name))
 
         grid_idx = tuple(grid_idx)
-        print(fitness)
         if fitness > self.fit_mat[grid_idx]:
             self.fit_mat[grid_idx] = fitness
             replaced_id = self.id_mat[grid_idx]
@@ -178,8 +177,9 @@ print("")
 fig = go.Figure()
 filtered_df = df[df["in_population"]==True]
 fig.add_trace(go.Scatter(
-    x=filtered_df[text_behaviour.behaviours[0]],
-    y=filtered_df[text_behaviour.behaviours[1]],
+    x=filtered_df[text_behaviour.behaviours[0]["name"]],
+    y=filtered_df[text_behaviour.behaviours[1]["name"]],
+    mode='markers',
     name="Initial population"
     ))
 
@@ -219,8 +219,9 @@ print("")
 
 filtered_df = df[df["in_population"]==True]
 fig.add_trace(go.Scatter(
-    x=filtered_df[text_behaviour.behaviours[0]],
-    y=filtered_df[text_behaviour.behaviours[1]],
+    x=filtered_df[text_behaviour.behaviours[0]["name"]],
+    y=filtered_df[text_behaviour.behaviours[1]["name"]],
+    mode='markers',
     name="Final population"
     ))
 fig.show()
