@@ -9,7 +9,7 @@ parser.add_argument(
     help="path to svg partial sketch",
     default="data/drawing_chair.svg",
 )
-parser.add_argument("--population_size", type=int, default=8)
+parser.add_argument("--population_size", type=int, default=25)
 parser.add_argument(
     "--prompt", type=str, help="what to draw", default="A red chair."
 )

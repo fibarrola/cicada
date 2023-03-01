@@ -46,9 +46,7 @@ for t in range(NUM_ITER):
 
 with torch.no_grad():
     pydiffvg.imwrite(
-        cicada.img,
-        f'results/{SAVE_PATH}/before.png',
-        gamma=1,
+        cicada.img, f'results/{SAVE_PATH}/before.png', gamma=1,
     )
 
 # Using prompt B #################
@@ -61,7 +59,5 @@ for t in range(NUM_ITER):
 
 with torch.no_grad():
     pydiffvg.imwrite(
-        cicada.img,
-        f'results/{SAVE_PATH}/after.png',
-        gamma=1,
+        cicada.img, f'results/{SAVE_PATH}/after.png', gamma=1,
     )

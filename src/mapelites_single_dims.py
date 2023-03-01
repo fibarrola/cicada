@@ -168,10 +168,7 @@ for id in df.index:
 
 show_population(grids, "Initial Population")
 plot_population(grids, "initial_population")
-mu, S = fid.get_statistics(
-    f"{save_path}/initial_population",
-    rand_sampled_set_dim=10,
-)
+mu, S = fid.get_statistics(f"{save_path}/initial_population", rand_sampled_set_dim=10,)
 print('Entropy: ', tie(S))
 
 # Search
@@ -207,8 +204,5 @@ for iter in range(args.mapelites_iters):
 
 show_population(grids, "Final Population")
 plot_population(grids, "final_population")
-mu, S = fid.get_statistics(
-    f"{save_path}/final_population",
-    rand_sampled_set_dim=10,
-)
+mu, S = fid.get_statistics(f"{save_path}/final_population", rand_sampled_set_dim=10,)
 print('Entropy: ', tie(S))

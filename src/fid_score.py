@@ -48,7 +48,9 @@ except ImportError:
     def tqdm(x):
         return x
 
+
 from .inception import InceptionV3
+
 IMAGE_EXTENSIONS = {'bmp', 'jpg', 'jpeg', 'pgm', 'png', 'ppm', 'tif', 'tiff', 'webp'}
 
 
@@ -330,12 +332,6 @@ def get_statistics(path, rand_sampled_set_dim=None, dims=2048, batch_size=5):
     model = InceptionV3([block_idx]).to(device)
 
     m, s = compute_statistics_of_path(
-        path,
-        model,
-        batch_size,
-        dims,
-        device,
-        rand_sampled_set_dim,
-        num_workers,
+        path, model, batch_size, dims, device, rand_sampled_set_dim, num_workers,
     )
     return m, s

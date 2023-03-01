@@ -119,9 +119,7 @@ class Cicada:
             num_rnd_traces: Int;
         '''
         shapes, shape_groups = treebranch_initialization(
-            self.drawing,
-            num_rnd_traces,
-            self.drawing_area,
+            self.drawing, num_rnd_traces, self.drawing_area,
         )
         self.drawing.add_shapes(shapes, shape_groups, fixed=False)
 

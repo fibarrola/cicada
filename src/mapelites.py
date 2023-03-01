@@ -80,7 +80,7 @@ def run_cicada(args, drawing=None, mutate=False, num_iter=1000):
 class Grid:
     def __init__(self):
         self.id_mat = None
-        self.fit_mat = -10.
+        self.fit_mat = -10.0
         self.dims = {}
 
     def add_scale(self, dim_name, value_list, num_slots):
@@ -105,7 +105,7 @@ class Grid:
                 grid_idx += 1
 
         return grid_idx
-    
+
     def allocate(self, id, behs, fitness):
         grid_idx = []
         for d, dim_name in enumerate(self.dims):
@@ -124,7 +124,7 @@ class Grid:
         assert len(self.id_mat.shape) == 2
         for i in range(self.id_mat.shape[0]):
             for j in range(self.id_mat.shape[1]):
-                if self.id_mat[i,j] is None:
+                if self.id_mat[i, j] is None:
                     img = torch.ones((224, 224, 3), device="cpu", requires_grad=False)
                 else:
                     with open(f"{save_path}/{self.id_mat[i,j]}.pkl", "rb") as f:
@@ -132,10 +132,9 @@ class Grid:
                     drawing.render_img()
                     img = drawing.img.cpu().permute(0, 2, 3, 1).squeeze(0)
                 pydiffvg.imwrite(
-                    img,
-                    f"{save_path}/{name}/{i}{j}.png",
-                    gamma=1,
+                    img, f"{save_path}/{name}/{i}{j}.png", gamma=1,
                 )
+
 
 # Generate population
 for k in range(args.population_size):
@@ -157,17 +156,17 @@ for id in df.index:
     behs = [x[dim_name] for dim_name in grid.dims]
     in_population, replaced_id = grid.allocate(id, behs, x['fitness'])
     df.at[id, "in_population"] = in_population
-    if replaced_id is not None:        
+    if replaced_id is not None:
         df.at[replaced_id, "in_population"] = False
 
 df.to_csv(f"{save_path}/df.csv", index_label="id")
 
-grid.image_array_2d(save_path,"initial_population")
+grid.image_array_2d(save_path, "initial_population")
 # mu, S = fid.get_statistics(
 #     f"{save_path}/initial_population",
 #     rand_sampled_set_dim=10,
 # )
-print("initial Population")    
+print("initial Population")
 print(df)
 print(grid.id_mat)
 print(grid.fit_mat)
@@ -175,13 +174,15 @@ print(grid.fit_mat)
 print("")
 
 fig = go.Figure()
-filtered_df = df[df["in_population"]==True]
-fig.add_trace(go.Scatter(
-    x=filtered_df[text_behaviour.behaviours[0]["name"]],
-    y=filtered_df[text_behaviour.behaviours[1]["name"]],
-    mode='markers',
-    name="Initial population"
-    ))
+filtered_df = df
+fig.add_trace(
+    go.Scatter(
+        x=filtered_df[text_behaviour.behaviours[0]["name"]],
+        y=filtered_df[text_behaviour.behaviours[1]["name"]],
+        mode='markers',
+        name="Initial population",
+    )
+)
 
 
 # Search
@@ -191,10 +192,12 @@ for iter in range(args.mapelites_iters):
     with open(f"{save_path}/{mutant_id}.pkl", "rb") as f:
         drawing = pickle.load(f)
     drawing.id = shortuuid.uuid()
-    fitness, behs, drawing = run_cicada(args, drawing=drawing, mutate=True, num_iter=args.num_iter//2)
+    fitness, behs, drawing = run_cicada(
+        args, drawing=drawing, mutate=True, num_iter=args.num_iter // 2
+    )
     in_population, replaced_id = grid.allocate(drawing.id, behs, fitness)
     df.loc[drawing.id] = [in_population, iter + 1, fitness] + behs
-    if replaced_id is not None:        
+    if replaced_id is not None:
         df.at[replaced_id, "in_population"] = False
 
     # save
@@ -204,12 +207,12 @@ for iter in range(args.mapelites_iters):
         pickle.dump(grid, f)
     df.to_csv(f"{save_path}/df.csv", index_label="id")
 
-grid.image_array_2d(save_path,"final_population")
+grid.image_array_2d(save_path, "final_population")
 # mu, S = fid.get_statistics(
 #     f"{save_path}/final_population",
 #     rand_sampled_set_dim=10,
 # )
-print("Final Population")    
+print("Final Population")
 print(df)
 print(grid.id_mat)
 print(grid.fit_mat)
@@ -217,11 +220,13 @@ print(grid.fit_mat)
 print("")
 
 
-filtered_df = df[df["in_population"]==True]
-fig.add_trace(go.Scatter(
-    x=filtered_df[text_behaviour.behaviours[0]["name"]],
-    y=filtered_df[text_behaviour.behaviours[1]["name"]],
-    mode='markers',
-    name="Final population"
-    ))
+filtered_df = df[df["in_population"] == True]
+fig.add_trace(
+    go.Scatter(
+        x=filtered_df[text_behaviour.behaviours[0]["name"]],
+        y=filtered_df[text_behaviour.behaviours[1]["name"]],
+        mode='markers',
+        name="Final population",
+    )
+)
 fig.show()
