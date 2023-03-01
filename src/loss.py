@@ -1,4 +1,5 @@
 import collections
+
 # import CLIP_.clip as clip
 import clip
 import torch
@@ -438,9 +439,7 @@ class CLIPConvLoss(torch.nn.Module):
         self.img_size = clip_preprocess.transforms[1].size
         self.model.eval()
         self.target_transform = transforms.Compose(
-            [
-                transforms.ToTensor(),
-            ]
+            [transforms.ToTensor(),]
         )  # clip normalisation
         self.normalize_transform = transforms.Compose(
             [
@@ -569,9 +568,7 @@ class CLIPConvLoss2(torch.nn.Module):
         self.img_size = clip_preprocess.transforms[1].size
         self.model.eval()
         self.target_transform = transforms.Compose(
-            [
-                transforms.ToTensor(),
-            ]
+            [transforms.ToTensor(),]
         )  # clip normalisation
         self.normalize_transform = transforms.Compose(
             [

@@ -9,27 +9,17 @@ parser.add_argument(
     help="path to svg partial sketch",
     default="data/drawing_chair.svg",
 )
-
-# CLIP prompts
+parser.add_argument("--population_size", type=int, default=25)
 parser.add_argument(
     "--prompt", type=str, help="what to draw", default="A red chair."
 )
-parser.add_argument("--neg_prompt", type=str, default="Written words.")
-parser.add_argument("--neg_prompt_2", type=str, default="Text.")
-parser.add_argument("--use_neg_prompts", type=bool, default=True)
-parser.add_argument("--normalize_clip", type=bool, default=True)
-
-# Canvas parameters
 parser.add_argument(
     "--num_paths", type=int, help="number of strokes to add", default=32
 )
-parser.add_argument("--canvas_h", type=int, help="canvas height", default=224)
-parser.add_argument("--canvas_w", type=int, help="canvas width", default=224)
 parser.add_argument("--max_width", type=int, help="max px width", default=40)
 
-# Algorithm parameters
 parser.add_argument(
-    "--num_iter", type=int, help="maximum algorithm iterations", default=500
+    "--num_iter", type=int, help="maximum algorithm iterations", default=1000
 )
 parser.add_argument(
     "--w_points",
@@ -50,12 +40,6 @@ parser.add_argument(
     default=0.001,
 )
 parser.add_argument(
-    "--w_img",
-    type=float,
-    help="regularization parameter for image L2 similarity",
-    default=0.00,
-)
-parser.add_argument(
     "--w_geo",
     type=float,
     help="regularization parameter for geometric similarity",
@@ -65,9 +49,6 @@ parser.add_argument("--x0", type=float, help="coordinate for drawing area", defa
 parser.add_argument("--x1", type=float, help="coordinate for drawing area", default=1.0)
 parser.add_argument("--y0", type=float, help="coordinate for drawing area", default=0.5)
 parser.add_argument("--y1", type=float, help="coordinate for drawing area", default=1.0)
-parser.add_argument(
-    "--num_trials", type=int, help="number of times to run the algorithm", default=1
-)
 parser.add_argument(
     "--num_augs",
     type=int,
@@ -81,10 +62,7 @@ parser.add_argument("--n_prunes", type=int, help="number of pruning stages", def
 
 # Saving
 parser.add_argument(
-    "--save_path", type=str, help="subfolder for saving results", default="chair"
-)
-parser.add_argument(
-    "--build_gif", type=bool, help="build a gif of the process", default=False
+    "--save_path", type=str, help="subfolder for saving results", default="results/mapelites/chair"
 )
 parser.add_argument(
     "--lr_boost", type=bool, help="mutate using lr boost", default=False
@@ -95,7 +73,17 @@ parser.add_argument(
 parser.add_argument(
     "--area_kill", type=bool, help="mutate area kill", default=False
 )
-
+parser.add_argument(
+    "--behaviour_dims", type=str,
+    help="conditioning behaviour words. Pairs (separated by ||) of words (separated by |)",
+    default="abstract drawing|realistic photo||simple|complex"
+)
+parser.add_argument(
+    "--grid_size", type=int, help="number of grid squares per behaviour dimension", default=5
+)
+parser.add_argument(
+    "--mapelites_iters", type=int, help="mapelite iterations", default=32
+)
 args = parser.parse_args()
 
 args.drawing_area = {'x0': args.x0, 'x1': args.x1, 'y0': args.y0, 'y1': args.y1}

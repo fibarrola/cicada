@@ -1,13 +1,15 @@
 from src import utils
 from src.loss import CLIPConvLoss2
 from src.render_design import treebranch_initialization
-from src.drawing import Drawing
+from drawing import Drawing
+from src.processing import get_augment_trans
 from src.svg_extraction import get_drawing_paths
 import clip
 from src.utils import get_nouns
 import torch
 import pydiffvg
 import copy
+import numpy as np
 
 pydiffvg.set_print_timing(False)
 pydiffvg.set_use_gpu(torch.cuda.is_available())
@@ -15,29 +17,46 @@ pydiffvg.set_device(torch.device('cuda:0') if torch.cuda.is_available() else 'cp
 
 
 class Cicada:
-    def __init__(self, args, device):
+    def __init__(
+        self,
+        device,
+        canvas_w=224,
+        canvas_h=224,
+        drawing_area={'x0': 0, 'x1': 1, 'y0': 0, 'y1': 1},
+        normalize_clip=True,
+        max_width=40,
+        drawing=None,
+    ):
         self.device = device
         self.model, preprocess = clip.load('ViT-B/32', self.device, jit=False)
         self.clipConvLoss = CLIPConvLoss2(self.device)
-        self.canvas_w = args.canvas_w
-        self.canvas_h = args.canvas_h
-        self.augment_trans = utils.get_augment_trans(args.canvas_w, args.normalize_clip)
-        self.drawing = Drawing(args.canvas_w, args.canvas_h)
-        self.drawing_area = args.drawing_area
-        self.num_augs = args.num_augs
+        if drawing is None:
+            self.drawing = Drawing(canvas_w, canvas_h)
+        else:
+            self.drawing = drawing
+        self.augment_trans = get_augment_trans(
+            self.drawing.canvas_width, normalize_clip
+        )
+        self.drawing_area = drawing_area
+        self.attention_regions = []
+        self.max_width = max_width
+        self.t = 0
 
-    def process_text(self, args):
+    def process_text(self, prompt, neg_prompts=["Written words.", "Text."]):
         self.nouns, noun_prompts = get_nouns()
-        text_input = clip.tokenize(args.prompt).to(self.device)
-        text_input_neg1 = clip.tokenize(args.neg_prompt).to(self.device)
-        text_input_neg2 = clip.tokenize(args.neg_prompt_2).to(self.device)
+        text_input = clip.tokenize(prompt).to(self.device)
+        self.neg_text_features = []
         with torch.no_grad():
             self.nouns_features = self.model.encode_text(
                 torch.cat([clip.tokenize(noun_prompts).to(self.device)])
             )
             self.text_features = self.model.encode_text(text_input)
-            self.text_features_neg1 = self.model.encode_text(text_input_neg1)
-            self.text_features_neg2 = self.model.encode_text(text_input_neg2)
+            self.neg_text_features = [
+                self.model.encode_text(
+                    torch.cat([clip.tokenize(prompt).to(self.device)])
+                )
+                for prompt in neg_prompts
+            ]
 
     def load_svg_shapes(self, svg_path):
         '''
@@ -100,9 +119,7 @@ class Cicada:
             num_rnd_traces: Int;
         '''
         shapes, shape_groups = treebranch_initialization(
-            self.drawing,
-            num_rnd_traces,
-            self.drawing_area,
+            self.drawing, num_rnd_traces, self.drawing_area,
         )
         self.drawing.add_shapes(shapes, shape_groups, fixed=False)
 
@@ -129,9 +146,9 @@ class Cicada:
             self.color_vars.append(trace.shape_group.stroke_color)
 
         self.render = pydiffvg.RenderFunction.apply
-        self.mask = utils.area_mask(self.canvas_w, self.canvas_h, self.drawing_area).to(
-            self.device
-        )
+        self.mask = utils.area_mask(
+            self.drawing.canvas_width, self.drawing.canvas_height, self.drawing_area
+        ).to(self.device)
         self.points_vars0 = copy.deepcopy(self.points_vars)
         self.stroke_width_vars0 = copy.deepcopy(self.stroke_width_vars)
         self.color_vars0 = copy.deepcopy(self.color_vars)
@@ -141,26 +158,136 @@ class Cicada:
             self.color_vars0[k].requires_grad = False
         self.img0 = copy.copy(self.drawing.img.detach())
 
-    def initialize_optimizer(self):
-        self.points_optim = torch.optim.Adam(self.points_vars, lr=0.2)
-        self.width_optim = torch.optim.Adam(self.stroke_width_vars, lr=0.2)
-        self.color_optim = torch.optim.Adam(self.color_vars, lr=0.02)
+    def initialize_optimizer(self, weight=1):
+        self.points_optim = torch.optim.Adam(self.points_vars, lr=weight * 0.3)
+        self.width_optim = torch.optim.Adam(self.stroke_width_vars, lr=weight * 0.3)
+        self.color_optim = torch.optim.Adam(self.color_vars, lr=weight * 0.03)
 
     def build_img(self, t, shapes=None, shape_groups=None):
         if not shapes:
             shapes = [trace.shape for trace in self.drawing.traces]
             shape_groups = [trace.shape_group for trace in self.drawing.traces]
         scene_args = pydiffvg.RenderFunction.serialize_scene(
-            self.canvas_w, self.canvas_h, shapes, shape_groups
+            self.drawing.canvas_width, self.drawing.canvas_height, shapes, shape_groups
         )
-        img = self.render(self.canvas_w, self.canvas_h, 2, 2, t, None, *scene_args)
+        img = self.render(
+            self.drawing.canvas_width,
+            self.drawing.canvas_height,
+            2,
+            2,
+            self.t,
+            None,
+            *scene_args,
+        )
+        self.t += 1
         img = img[:, :, 3:4] * img[:, :, :3] + torch.ones(
             img.shape[0], img.shape[1], 3, device=pydiffvg.get_device()
         ) * (1 - img[:, :, 3:4])
         img = img[:, :, :3].unsqueeze(0).permute(0, 3, 1, 2)  # NHWC -> NCHW
         return img
 
-    def run_epoch(self, t, args):
+    def set_penalizers(
+        self,
+        w_points=0.001,
+        w_colors=0.01,
+        w_widths=0.001,
+        w_img=0.0,
+        w_geo=3.5,
+        w_global=1,
+    ):
+        self.w_points = w_points
+        self.w_colors = w_colors
+        self.w_widths = w_widths
+        self.w_img = w_img
+        self.w_geo = w_geo
+        self.w_global = w_global
+
+    def mutate_lr(self, increase_rate=5, num_iter=10):
+        self.initialize_optimizer(increase_rate)
+        for iter in range(num_iter):
+            self.run_epoch()
+        self.initialize_optimizer(1)
+
+    @torch.no_grad()
+    def mutate_respawn_traces(self, rate=0.3, num_sets=10, num_augs=4):
+        unfixed_inds = [
+            k
+            for k in range(len(self.drawing.traces))
+            if not self.drawing.traces[k].is_fixed
+        ]
+        N = round(rate * len(unfixed_inds))
+        index_lists = [np.random.choice(unfixed_inds, N) for k in range(num_sets)]
+        losses = []
+        for idx_list in index_lists:
+            shapes, shape_groups = self.drawing.all_shapes_except(idx_list)
+            img = self.build_img(5, shapes, shape_groups)
+            img_augs = []
+            for n in range(num_augs):
+                img_augs.append(self.augment_trans(img))
+            im_batch = torch.cat(img_augs)
+            img_features = self.model.encode_image(im_batch)
+            loss = 0
+            for n in range(num_augs):
+                loss -= torch.cosine_similarity(
+                    self.text_features, img_features[n : n + 1], dim=1
+                )
+            losses.append(loss.cpu().item())
+
+        min_idx = np.argmin(losses)
+        self.drawing.remove_traces(index_lists[min_idx])
+        self.add_random_shapes(N)
+
+    @torch.no_grad()
+    def mutate_area_kill(self, grid_divs=5, num_augs=4):
+        losses = []
+        areas = []
+        for kx in range(grid_divs - 1):
+            for ky in range(grid_divs - 1):
+                area = {
+                    'x0': kx / grid_divs,
+                    'x1': (kx + 2) / grid_divs,
+                    'y0': ky / grid_divs,
+                    'y1': (ky + 2) / grid_divs,
+                }
+                mask = utils.area_mask(
+                    self.drawing.canvas_width, self.drawing.canvas_height, area
+                ).to(self.device)
+                loss = 0
+                img_augs = []
+                img = self.build_img(100000)
+                for n in range(num_augs):
+                    img_augs.append(self.augment_trans(img * mask))
+
+                im_batch = torch.cat(img_augs)
+                img_features = self.model.encode_image(im_batch)
+                for n in range(num_augs):
+                    loss -= torch.cosine_similarity(
+                        self.text_features, img_features[n : n + 1], dim=1
+                    )
+                losses.append(loss.to('cpu').item())
+                areas.append(area)
+        dead_area = areas[np.argmin(losses)]
+        dead_area = {
+            "x0": dead_area["x0"] * self.drawing.canvas_width,
+            "x1": dead_area["x1"] * self.drawing.canvas_width,
+            # "y0":(1-dead_area["y1"])*self.drawing.canvas_height,
+            # "y1":(1-dead_area["y0"])*self.drawing.canvas_height,
+            "y0": dead_area["y0"] * self.drawing.canvas_height,
+            "y1": dead_area["y1"] * self.drawing.canvas_height,
+        }
+        removal_inds = []
+        for t, trace in enumerate(self.drawing.traces):
+            if not trace.is_fixed:
+                for point in trace.shape.points:
+                    if dead_area["x0"] < point[0] < dead_area["x1"]:
+                        if dead_area["y0"] < point[1] < dead_area["y1"]:
+                            removal_inds.append(t)
+                            break
+
+        self.drawing.remove_traces(removal_inds)
+        self.add_random_shapes(len(removal_inds))
+
+    def run_epoch(self, t="deprecated", num_augs=4):
         self.points_optim.zero_grad()
         self.width_optim.zero_grad()
         self.color_optim.zero_grad()
@@ -169,36 +296,46 @@ class Cicada:
 
         img_loss = (
             torch.norm((img - self.img0) * self.mask)
-            if args.w_img > 0
+            if self.w_img > 0
             else torch.tensor(0, device=self.device)
         )
 
         self.img = img.cpu().permute(0, 2, 3, 1).squeeze(0)
+        # self.drawing.img = self.img
 
         loss = 0
 
         img_augs = []
-        for n in range(args.num_augs):
+        for n in range(num_augs):
             img_augs.append(self.augment_trans(img))
+
         im_batch = torch.cat(img_augs)
         img_features = self.model.encode_image(im_batch)
-        for n in range(args.num_augs):
+        for n in range(num_augs):
             loss -= torch.cosine_similarity(
                 self.text_features, img_features[n : n + 1], dim=1
             )
-            if args.use_neg_prompts:
+            for neg_text_feat in self.neg_text_features:
                 loss += (
                     torch.cosine_similarity(
-                        self.text_features_neg1, img_features[n : n + 1], dim=1
+                        neg_text_feat, img_features[n : n + 1], dim=1
                     )
                     * 0.3
                 )
-                loss += (
-                    torch.cosine_similarity(
-                        self.text_features_neg2, img_features[n : n + 1], dim=1
-                    )
-                    * 0.3
+
+        for att_region in self.attention_regions:
+            cropped_batch = []
+            cropped_img = img * att_region['mask'] + 1 - att_region['mask']
+            for n in range(num_augs):
+                cropped_batch.append(self.augment_trans(cropped_img))
+
+            cropped_batch = torch.cat(cropped_batch)
+            cropped_features = self.model.encode_image(cropped_batch)
+            for n in range(num_augs):
+                loss -= torch.cosine_similarity(
+                    att_region['text_features'], cropped_features[n : n + 1], dim=1
                 )
+
         self.img_features = img_features
 
         points_loss = 0
@@ -213,18 +350,18 @@ class Cicada:
                     self.stroke_width_vars[k] - self.stroke_width_vars0[k]
                 )
 
-        loss += args.w_points * points_loss
-        loss += args.w_colors * colors_loss
-        loss += args.w_widths * widths_loss
-        loss += args.w_img * img_loss
+        loss += self.w_points * points_loss
+        loss += self.w_colors * colors_loss
+        loss += self.w_widths * widths_loss
+        loss += self.w_img * img_loss
 
         geo_loss = self.clipConvLoss(img * self.mask + 1 - self.mask, self.img0)
 
         for l_name in geo_loss:
-            loss += args.w_geo * geo_loss[l_name]
-        # loss += args.w_geo * geo_loss['clip_conv_loss_layer3']
+            loss += self.w_geo * geo_loss[l_name]
 
         # Backpropagate the gradients.
+        loss = self.w_global * loss
         loss.backward()
 
         # Take a gradient descent step.
@@ -232,7 +369,7 @@ class Cicada:
         self.width_optim.step()
         self.color_optim.step()
         for trace in self.drawing.traces:
-            trace.shape.stroke_width.data.clamp_(1.0, args.max_width)
+            trace.shape.stroke_width.data.clamp_(1.0, self.max_width)
             trace.shape_group.stroke_color.data.clamp_(0.0, 1.0)
 
         self.losses = {
@@ -244,9 +381,8 @@ class Cicada:
             'geometric': geo_loss,
         }
 
-    def prune(self, prune_ratio):
+    def prune(self, prune_ratio, num_augs=4):
         with torch.no_grad():
-
             # Get points of tied traces
             fixed_points = []
             for trace in self.drawing.traces:
@@ -288,12 +424,12 @@ class Cicada:
                     shapes, shape_groups = self.drawing.all_shapes_but_kth(n)
                     img = self.build_img(5, shapes, shape_groups)
                     img_augs = []
-                    for n in range(self.num_augs):
+                    for n in range(num_augs):
                         img_augs.append(self.augment_trans(img))
                     im_batch = torch.cat(img_augs)
                     img_features = self.model.encode_image(im_batch)
                     loss = 0
-                    for n in range(self.num_augs):
+                    for n in range(num_augs):
                         loss -= torch.cosine_similarity(
                             self.text_features, img_features[n : n + 1], dim=1
                         )

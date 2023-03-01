@@ -5,7 +5,7 @@
 # sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 8
 # sudo update-alternatives --config gcc
 
-conda create -n cicada
+conda create -n cicada -y
 conda activate cicada
 
 git clone https://github.com/BachiLi/diffvg
@@ -14,7 +14,7 @@ cp ../fix.py fix.py
 python3 fix.py
 
 git submodule update --init --recursive
-conda install -y pytorch torchvision -c pytorch
+conda install -y pytorch==1.12.1 torchvision==0.13.1 torchaudio==0.12.1 cudatoolkit=11.3 -c pytorch
 conda install -y numpy
 conda install -y scikit-image
 conda install -y -c anaconda cmake
