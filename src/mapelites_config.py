@@ -9,7 +9,7 @@ parser.add_argument(
     help="path to svg partial sketch",
     default="data/drawing_chair.svg",
 )
-parser.add_argument("--population_size", type=int, default=8)
+parser.add_argument("--population_size", type=int, default=25)
 parser.add_argument(
     "--prompt", type=str, help="what to draw", default="A red chair."
 )
@@ -76,7 +76,7 @@ parser.add_argument(
 parser.add_argument(
     "--behaviour_dims", type=str,
     help="conditioning behaviour words. Pairs (separated by ||) of words (separated by |)",
-    default="drawing|photo||simple|complex||abstract|realistic"
+    default="abstract drawing|realistic photo||simple|complex"
 )
 parser.add_argument(
     "--grid_size", type=int, help="number of grid squares per behaviour dimension", default=5
