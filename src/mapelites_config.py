@@ -39,23 +39,7 @@ parser.add_argument(
     help="regularization parameter for width differences",
     default=0.001,
 )
-parser.add_argument(
-    "--w_geo",
-    type=float,
-    help="regularization parameter for geometric similarity",
-    default=3.5,
-)
-parser.add_argument("--x0", type=float, help="coordinate for drawing area", default=0.0)
-parser.add_argument("--x1", type=float, help="coordinate for drawing area", default=1.0)
-parser.add_argument("--y0", type=float, help="coordinate for drawing area", default=0.5)
-parser.add_argument("--y1", type=float, help="coordinate for drawing area", default=1.0)
-parser.add_argument(
-    "--num_augs",
-    type=int,
-    help="number of augmentations for computing semantic loss",
-    default=4,
-)
-parser.add_argument(
+parser.add_argumedumpnt(
     "--prune_ratio", type=float, help="ratio of paths to be pruned out", default=0.4
 )
 parser.add_argument("--n_prunes", type=int, help="number of pruning stages", default=1)

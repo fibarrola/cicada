@@ -43,6 +43,7 @@ def run_cicada(args, text_behaviour, drawing=None, mutate=False, num_iter=1000):
     behs = [b.item() for b in behs]
     return fitness, behs, cicada.drawing
 
+
 class Grid:
     def __init__(self):
         self.id_mat = None
@@ -100,3 +101,5 @@ class Grid:
                 pydiffvg.imwrite(
                     img, f"{save_path}/{name}/{i}{j}.png", gamma=1,
                 )
+
+
