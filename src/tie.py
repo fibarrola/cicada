@@ -26,6 +26,7 @@ class ImagePathDataset(torch.utils.data.Dataset):
             img = self.transforms(img)
         return img
 
+
 class TIE:
     def __init__(self, dims=2048):
         self.device = torch.device('cuda' if (torch.cuda.is_available()) else 'cpu')
@@ -34,12 +35,26 @@ class TIE:
         block_idx = InceptionV3.BLOCK_INDEX_BY_DIM[dims]
         self.dims = dims
         self.model = InceptionV3([block_idx]).to(self.device)
-        self.image_extensions = {'bmp', 'jpg', 'jpeg', 'pgm', 'png', 'ppm', 'tif', 'tiff', 'webp'}
-    
+        self.image_extensions = {
+            'bmp',
+            'jpg',
+            'jpeg',
+            'pgm',
+            'png',
+            'ppm',
+            'tif',
+            'tiff',
+            'webp',
+        }
+
     def calculate(self, path, rand_sampled_set_dim=None, batch_size=5, truncate=None):
         path = pathlib.Path(path)
         files = sorted(
-            [file for ext in self.image_extensions for file in path.glob('*.{}'.format(ext))]
+            [
+                file
+                for ext in self.image_extensions
+                for file in path.glob('*.{}'.format(ext))
+            ]
         )
         if rand_sampled_set_dim:
             random.shuffle(files)
@@ -91,7 +106,6 @@ class TIE:
         K = truncate if truncate is not None else len(files)
         return self.tie(sigma, K)
 
-    
     def tie(self, S, K=None):
         eigvals, _ = np.linalg.eigh(S)
         eigvals = [x for x in eigvals if x > 0.01]

@@ -3,7 +3,7 @@ import argparse
 import pickle
 import plotly.graph_objects as go
 from map_utils import Grid
-
+from tie import TIE
 
 parser = argparse.ArgumentParser(description='Plotting args')
 parser.add_argument("--path", type=str, default="results/mapelites/dress_1")
@@ -15,7 +15,7 @@ with open(f"{args.path}/grids.pkl", "rb") as f:
 
 beh_dims = [dim for dim in grid.dims]
 fig = go.Figure()
-filtered_df = df[df["orig_iter"]==0]
+filtered_df = df[df["orig_iter"] == 0]
 fig.add_trace(
     go.Scatter(
         x=filtered_df[beh_dims[0]],
@@ -24,7 +24,7 @@ fig.add_trace(
         name="Initial population",
     )
 )
-filtered_df = df[df["in_population"] == True]
+filtered_df = df.loc[df["in_population"]]
 fig.add_trace(
     go.Scatter(
         x=filtered_df[beh_dims[0]],
@@ -33,11 +33,7 @@ fig.add_trace(
         name="Final population",
     )
 )
-fig.update_traces(
-    marker={
-        "opacity": 0.6
-    }
-)
+fig.update_traces(marker={"opacity": 0.6})
 fig.update_xaxes(title_text=beh_dims[0])
 fig.update_yaxes(title_text=beh_dims[1])
 for g in grid.dims[beh_dims[0]]:
@@ -46,18 +42,26 @@ for g in grid.dims[beh_dims[1]]:
     fig.add_hline(g, line_width=1, line_color="gray")
 fig.update_layout(
     xaxis_range=[
-        2*grid.dims[beh_dims[0]][0]-grid.dims[beh_dims[0]][1],
-        2*grid.dims[beh_dims[0]][-1]-grid.dims[beh_dims[0]][-2]
+        2 * grid.dims[beh_dims[0]][0] - grid.dims[beh_dims[0]][1],
+        2 * grid.dims[beh_dims[0]][-1] - grid.dims[beh_dims[0]][-2],
     ],
     yaxis_range=[
-        2*grid.dims[beh_dims[1]][0]-grid.dims[beh_dims[1]][1],
-        2*grid.dims[beh_dims[1]][-1]-grid.dims[beh_dims[1]][-2]
-    ]
+        2 * grid.dims[beh_dims[1]][0] - grid.dims[beh_dims[1]][1],
+        2 * grid.dims[beh_dims[1]][-1] - grid.dims[beh_dims[1]][-2],
+    ],
 )
 fig.show()
 
-from tie import TIE
-
 tie = TIE()
-print("Initial population TIE: ", tie.calculate(f"{args.path}/initial_population", truncate=len(df[df["in_population"] == True])))
-print("Final Population TIE: ", tie.calculate(f"{args.path}/final_population", truncate=len(df[df["in_population"] == True])))
+print(
+    "Initial population TIE: ",
+    tie.calculate(
+        f"{args.path}/initial_population", truncate=len(df.loc[df["in_population"]])
+    ),
+)
+print(
+    "Final Population TIE: ",
+    tie.calculate(
+        f"{args.path}/final_population", truncate=len(df.loc[df["in_population"]])
+    ),
+)

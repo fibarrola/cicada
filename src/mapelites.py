@@ -4,9 +4,6 @@ import torch
 import random
 import shortuuid
 import pandas as pd
-import src.fid_score as fid
-import plotly.graph_objects as go
-from utils import tie
 from mapelites_config import args
 from behaviour import TextBehaviour
 from map_utils import run_cicada, Grid
@@ -74,7 +71,7 @@ print("")
 # Search
 for iter in range(args.mapelites_iters):
     print(f"Building {iter+1}-th mutant...")
-    mutant_id = random.choice(df[df["in_population"] == True].index)
+    mutant_id = random.choice(df.loc[df["in_population"]].index)
     with open(f"{save_path}/{mutant_id}.pkl", "rb") as f:
         drawing = pickle.load(f)
     drawing.id = shortuuid.uuid()

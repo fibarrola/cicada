@@ -7,6 +7,7 @@ from drawing_model import Cicada
 
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
+
 def run_cicada(args, text_behaviour, drawing=None, mutate=False, num_iter=1000):
     cicada = Cicada(
         device=device,
@@ -99,7 +100,7 @@ class Grid:
                     drawing.render_img()
                     img = drawing.img.cpu().permute(0, 2, 3, 1).squeeze(0)
                 pydiffvg.imwrite(
-                    img, f"{save_path}/{name}/{i}{j}.png", gamma=1,
+                    img,
+                    f"{save_path}/{name}/{i}{j}.png",
+                    gamma=1,
                 )
-
-

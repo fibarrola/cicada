@@ -70,7 +70,9 @@ for trial in range(args.num_trials):
         if (t + 1) % args.num_iter // 50:
             with torch.no_grad():
                 pydiffvg.imwrite(
-                    cicada.img, save_path + time_str + '.png', gamma=1,
+                    cicada.img,
+                    save_path + time_str + '.png',
+                    gamma=1,
                 )
                 if args.build_gif:
                     gif_builder.add(cicada.img)
@@ -90,7 +92,9 @@ for trial in range(args.num_trials):
         if t in prune_places:
             with torch.no_grad():
                 pydiffvg.imwrite(
-                    cicada.img, save_path + time_str + f'_preP_{t}.png', gamma=1,
+                    cicada.img,
+                    save_path + time_str + f'_preP_{t}.png',
+                    gamma=1,
                 )
             cicada.prune(args.prune_ratio)
             args.prune_ratio += p0 / len(prune_places)
@@ -98,13 +102,17 @@ for trial in range(args.num_trials):
         if t - 1 in prune_places:
             with torch.no_grad():
                 pydiffvg.imwrite(
-                    cicada.img, save_path + time_str + f'_postP_{t-1}.png', gamma=1,
+                    cicada.img,
+                    save_path + time_str + f'_postP_{t-1}.png',
+                    gamma=1,
                 )
 
         utils.printProgressBar(t + 1, args.num_iter, cicada.losses['global'].item())
 
     pydiffvg.imwrite(
-        cicada.img, save_path + time_str + '.png', gamma=1,
+        cicada.img,
+        save_path + time_str + '.png',
+        gamma=1,
     )
     utils.save_data(save_path, time_str, args)
 
