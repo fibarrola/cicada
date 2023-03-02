@@ -4,6 +4,7 @@ import PIL.ImageDraw
 import requests
 import numpy as np
 from IPython.display import Image
+from IPython import display
 
 
 def imread(url, max_size=None, mode=None):

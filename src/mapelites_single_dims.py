@@ -168,12 +168,15 @@ for id in df.index:
 
 show_population(grids, "Initial Population")
 plot_population(grids, "initial_population")
-mu, S = fid.get_statistics(f"{save_path}/initial_population", rand_sampled_set_dim=10,)
+mu, S = fid.get_statistics(
+    f"{save_path}/initial_population",
+    rand_sampled_set_dim=10,
+)
 print('Entropy: ', tie(S))
 
 # Search
 for iter in range(args.mapelites_iters):
-    mutant_id = random.choice(df[df["in_population"] == True].index)
+    mutant_id = random.choice(df.loc[df["in_population"]].index)
     with open(f"{save_path}/{mutant_id}.pkl", "rb") as f:
         drawing = pickle.load(f)
     drawing.id = shortuuid.uuid()
@@ -204,5 +207,8 @@ for iter in range(args.mapelites_iters):
 
 show_population(grids, "Final Population")
 plot_population(grids, "final_population")
-mu, S = fid.get_statistics(f"{save_path}/final_population", rand_sampled_set_dim=10,)
+mu, S = fid.get_statistics(
+    f"{save_path}/final_population",
+    rand_sampled_set_dim=10,
+)
 print('Entropy: ', tie(S))
