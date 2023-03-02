@@ -59,5 +59,5 @@ fig.show()
 from tie import TIE
 
 tie = TIE()
-print("Initial population TIE: ", tie.calculate(f"{args.path}/initial_population"))
-print("Final Population TIE: ", tie.calculate(f"{args.path}/final_population"))
+print("Initial population TIE: ", tie.calculate(f"{args.path}/initial_population", truncate=len(df[df["in_population"] == True])))
+print("Final Population TIE: ", tie.calculate(f"{args.path}/final_population", truncate=len(df[df["in_population"] == True])))

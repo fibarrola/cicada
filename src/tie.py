@@ -4,6 +4,7 @@ import pathlib
 import random
 import numpy as np
 import torchvision.transforms as TF
+import warnings
 from tqdm import tqdm
 from PIL import Image
 from inception import InceptionV3
@@ -87,20 +88,25 @@ class TIE:
 
             sigma = np.cov(pred_arr, rowvar=False)
 
-        return self.tie(sigma, K=truncate)
+        K = truncate if truncate is not None else len(files)
+        return self.tie(sigma, K)
 
     
     def tie(self, S, K=None):
         eigvals, _ = np.linalg.eigh(S)
+        eigvals = [x for x in eigvals if x > 0.01]
+        print(K)
         if not K:
-            eigvals = [x for x in eigvals if x > 0.01]
             K = len(eigvals)
         else:
-            eigvals = eigvals[:K]
+            if K < len(eigvals):
+                eigvals = eigvals[-K:]
+            elif K > len(eigvals):
+                warnings.warn("Number of EIGs>0.01 is lower than truncation parameter.")
 
         entropy = K * (np.log(2 * np.pi) + 1)
         for eig in eigvals:
-            if eig < 0.01:
+            if eig < 0.0001:
                 raise ValueError("Eigenvalue is too small")
             entropy += np.log(eig)
         entropy *= 0.5
