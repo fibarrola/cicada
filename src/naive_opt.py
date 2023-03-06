@@ -11,9 +11,14 @@ import os
 # args.svg_path = "data/drawing_dress.svg"
 # args.drawing_area = {'x0': args.x0, 'x1': args.x1, 'y0': 0., 'y1': 0.5}
 
-args.save_path="results/naive/chair"
+# args.save_path="results/naive/chair"
 # args.prompt = "A blue dress"
 # args.svg_path = "data/drawing_dress.svg"
+# args.drawing_area = {'x0': args.x0, 'x1': args.x1, 'y0': 0., 'y1': 0.5}
+
+args.save_path="results/naive/lamp"
+args.prompt = "A lamp"
+args.svg_path = "data/drawing_lamp.svg"
 # args.drawing_area = {'x0': args.x0, 'x1': args.x1, 'y0': 0., 'y1': 0.5}
 
 
