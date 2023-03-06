@@ -6,7 +6,8 @@ from map_utils import Grid
 from tie import TIE
 
 parser = argparse.ArgumentParser(description='Plotting args')
-parser.add_argument("--path", type=str, default="results/mapelites/dress_1")
+# parser.add_argument("--path", type=str, default="results/mapelites/dress_1")
+parser.add_argument("--path", type=str, default="results/mapelites/chair_46")
 args = parser.parse_args()
 
 df = pd.read_csv(f"{args.path}/df.csv", index_col="id")
