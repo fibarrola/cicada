@@ -1,6 +1,8 @@
 import pandas as pd
 import plotly.graph_objects as go
+from tie import TIE
 
+tie = TIE()
 
 for save_path in [
     "results/naive/chair_1",

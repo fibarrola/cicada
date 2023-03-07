@@ -85,6 +85,8 @@ for i in range(5):
         fitness, behs, drawing = run_cicada(args, behaviour_dims, target=[b0, b1])
         df.loc[drawing.id] = [False, 0, fitness] + behs
         df.to_csv(f"{save_path}/df.csv", index_label="id")
+        with open(f"{save_path}/{drawing.id}.pkl", "wb") as f:
+            pickle.dump(drawing, f)
 
 
 fig = go.Figure()
