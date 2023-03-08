@@ -79,10 +79,10 @@ parser.add_argument(
     default="abstract drawing|realistic photo||simple|complex"
 )
 parser.add_argument(
-    "--grid_size", type=int, help="number of grid squares per behaviour dimension", default=5
+    "--grid_size", type=int, help="number of grid squares per behaviour dimension", default=9
 )
 parser.add_argument(
-    "--mapelites_iters", type=int, help="mapelite iterations", default=32
+    "--mapelites_iters", type=int, help="mapelite iterations", default=100
 )
 args = parser.parse_args()
 

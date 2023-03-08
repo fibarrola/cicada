@@ -6,8 +6,10 @@ from map_utils import Grid
 from tie import TIE
 
 parser = argparse.ArgumentParser(description='Plotting args')
+# parser.add_argument("--path", type=str, default="results/mapelites/lamp_1")
 # parser.add_argument("--path", type=str, default="results/mapelites/dress_1")
 parser.add_argument("--path", type=str, default="results/mapelites/chair_46")
+# parser.add_argument("--path", type=str, default="results/mapelites/chair_45")
 args = parser.parse_args()
 
 df = pd.read_csv(f"{args.path}/df.csv", index_col="id")
@@ -57,12 +59,12 @@ tie = TIE()
 print(
     "Initial population TIE: ",
     tie.calculate(
-        f"{args.path}/initial_population", truncate=len(df.loc[df["in_population"]])
+        f"{args.path}/initial_population", truncate=8
     ),
 )
 print(
     "Final Population TIE: ",
     tie.calculate(
-        f"{args.path}/final_population", truncate=len(df.loc[df["in_population"]])
+        f"{args.path}/final_population", truncate=8
     ),
 )

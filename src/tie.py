@@ -109,7 +109,6 @@ class TIE:
     def tie(self, S, K=None):
         eigvals, _ = np.linalg.eigh(S)
         eigvals = [x for x in eigvals if x > 0.01]
-        print(K)
         if not K:
             K = len(eigvals)
         else:

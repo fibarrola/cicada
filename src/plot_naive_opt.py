@@ -4,13 +4,14 @@ from tie import TIE
 
 tie = TIE()
 
-for save_path in [
-    "results/naive/chair_1",
-    "results/naive/dress_2",
-]:
-    df = pd.read_csv(f"{save_path}/df.csv")
-    print(df.columns.values)
+names = ['chair', 'hat', 'lamp', 'pot', 'boat', 'dress', 'shoe', 'bust']
 
+
+for name in names:
+    df = pd.read_csv(f"results/naive/{name}_0/df.csv")
+    print(tie.calculate(
+        f"results/naive/{name}_0/images", truncate=8)
+    ),
     fig = go.Figure()
     fig.add_trace(
         go.Scatter(
@@ -20,6 +21,6 @@ for save_path in [
         )
     )
     fig.update_layout(
-        title=save_path
+        title=name
     )
     fig.show()

@@ -5,37 +5,34 @@ import pandas as pd
 import torch
 import plotly.graph_objects as go
 import os
-
-# args.save_path="results/naive/dress"
-# args.prompt = "A blue dress"
-# args.svg_path = "data/drawing_dress.svg"
-# args.drawing_area = {'x0': args.x0, 'x1': args.x1, 'y0': 0., 'y1': 0.5}
-
-# args.save_path="results/naive/chair"
-# args.prompt = "A blue dress"
-# args.svg_path = "data/drawing_dress.svg"
-# args.drawing_area = {'x0': args.x0, 'x1': args.x1, 'y0': 0., 'y1': 0.5}
-
-args.save_path="results/naive/lamp"
-args.prompt = "A lamp"
-args.svg_path = "data/drawing_lamp.svg"
-# args.drawing_area = {'x0': args.x0, 'x1': args.x1, 'y0': 0., 'y1': 0.5}
+import pickle
 
 
-k = 0
-while os.path.exists(f"{args.save_path}_{k}"):
-    k += 1
-save_path = f"{args.save_path}_{k}"
-os.makedirs(save_path)
 
-text_behaviour = TextBehaviour()
-behaviour_dims = [x.split("|") for x in args.behaviour_dims.split("||")]
-for bd in behaviour_dims:
-    text_behaviour.add_behaviour(bd[0], bd[1])
-df = pd.DataFrame(
-    columns=["in_population", "orig_iter", "fitness"]
-    + [beh["name"] for beh in text_behaviour.behaviours]
-)
+prompts = [
+    'A red chair.',
+    'A drawing of a hat.',
+    'A drawing of a lamp.',
+    'A drawing of a pot.',
+    'A drawing of a boat.',
+    'A blue dress.',
+    'A high-heel shoe.',
+    'A bust.',
+]
+names = ['chair', 'hat', 'lamp', 'pot', 'boat', 'dress', 'shoe', 'bust']
+
+drawing_areas = [
+    {'x0': args.x0, 'x1': args.x1, 'y0': 0.5, 'y1': 1.},
+    {'x0': args.x0, 'x1': args.x1, 'y0': 0.5, 'y1': 1.},
+    {'x0': args.x0, 'x1': args.x1, 'y0': 0.5, 'y1': 1.},
+    {'x0': args.x0, 'x1': args.x1, 'y0': 0., 'y1': 0.5},
+    {'x0': args.x0, 'x1': args.x1, 'y0': 0.4, 'y1': 1.},
+    {'x0': args.x0, 'x1': args.x1, 'y0': 0., 'y1': 0.5},
+    {'x0': args.x0, 'x1': args.x1, 'y0': 0., 'y1': 0.5},
+    {'x0': args.x0, 'x1': args.x1, 'y0': 0.5, 'y1': 1.},
+]
+
+
 
 def run_cicada(args, behaviour_wordss, target, drawing=None, mutate=False, num_iter=1000):
     cicada = Cicada(
@@ -76,25 +73,61 @@ def run_cicada(args, behaviour_wordss, target, drawing=None, mutate=False, num_i
     behs = [b.item() for b in behs]
     return fitness, behs, cicada.drawing
 
+for k in range(8):
+    args.save_path = f"results/naive/{names[k]}"
+    args.prompt = prompts[k]
+    args.svg_path = f"data/drawing_{names[k]}.svg"
+    args.drawing_area = drawing_areas[k]
 
-for i in range(5):
-    b0 = -0.25+(0.12+0.25)*i/4
-    for j in range(5):
-        print(f"Running grid square ({i+1}, {j+1}) ...")
-        b1 = -0.07+(0.1+0.07)*j/4
-        fitness, behs, drawing = run_cicada(args, behaviour_dims, target=[b0, b1])
-        df.loc[drawing.id] = [False, 0, fitness] + behs
-        df.to_csv(f"{save_path}/df.csv", index_label="id")
-        with open(f"{save_path}/{drawing.id}.pkl", "wb") as f:
-            pickle.dump(drawing, f)
+# args.save_path="results/naive/dress"
+# args.prompt = "A blue dress"
+# args.svg_path = "data/drawing_dress.svg"
+# args.drawing_area = {'x0': args.x0, 'x1': args.x1, 'y0': 0., 'y1': 0.5}
+
+# args.save_path="results/naive/chair"
+# args.prompt = "A blue dress"
+# args.svg_path = "data/drawing_dress.svg"
+# args.drawing_area = {'x0': args.x0, 'x1': args.x1, 'y0': 0., 'y1': 0.5}
+
+# args.save_path="results/naive/lamp"
+# args.prompt = "A lamp"
+# args.svg_path = "data/drawing_lamp.svg"
+# args.drawing_area = {'x0': args.x0, 'x1': args.x1, 'y0': 0., 'y1': 0.5}
 
 
-fig = go.Figure()
-fig.add_trace(
-    go.Scatter(
-        x=df[text_behaviour.behaviours[0]["name"]],
-        y=df[text_behaviour.behaviours[1]["name"]],
-        mode='markers',
+    k = 0
+    while os.path.exists(f"{args.save_path}_{k}"):
+        k += 1
+    save_path = f"{args.save_path}_{k}"
+    os.makedirs(save_path)
+
+    text_behaviour = TextBehaviour()
+    behaviour_dims = [x.split("|") for x in args.behaviour_dims.split("||")]
+    for bd in behaviour_dims:
+        text_behaviour.add_behaviour(bd[0], bd[1])
+    df = pd.DataFrame(
+        columns=["in_population", "orig_iter", "fitness"]
+        + [beh["name"] for beh in text_behaviour.behaviours]
     )
-)
-fig.show()
+
+    for i in range(5):
+        b0 = -0.25+(0.12+0.25)*i/4
+        for j in range(5):
+            print(f"Running grid square ({i+1}, {j+1}) ...")
+            b1 = -0.07+(0.1+0.07)*j/4
+            fitness, behs, drawing = run_cicada(args, behaviour_dims, target=[b0, b1])
+            df.loc[drawing.id] = [False, 0, fitness] + behs
+            df.to_csv(f"{save_path}/df.csv", index_label="id")
+            with open(f"{save_path}/{drawing.id}.pkl", "wb") as f:
+                pickle.dump(drawing, f)
+
+
+    fig = go.Figure()
+    fig.add_trace(
+        go.Scatter(
+            x=df[text_behaviour.behaviours[0]["name"]],
+            y=df[text_behaviour.behaviours[1]["name"]],
+            mode='markers',
+        )
+    )
+    fig.show()
