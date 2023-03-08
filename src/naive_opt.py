@@ -100,6 +100,7 @@ for k in range(8):
         k += 1
     save_path = f"{args.save_path}_{k}"
     os.makedirs(save_path)
+    os.makedirs(f"{save_path}/images")
 
     text_behaviour = TextBehaviour()
     behaviour_dims = [x.split("|") for x in args.behaviour_dims.split("||")]
@@ -120,6 +121,13 @@ for k in range(8):
             df.to_csv(f"{save_path}/df.csv", index_label="id")
             with open(f"{save_path}/{drawing.id}.pkl", "wb") as f:
                 pickle.dump(drawing, f)
+            
+            img = drawing.img.cpu().permute(0, 2, 3, 1).squeeze(0)
+            pydiffvg.imwrite(
+                img,
+                f"{save_path}/images/{drawing_id}.png",
+                gamma=1,
+            )
 
 
     fig = go.Figure()
