@@ -41,22 +41,39 @@ class Cicada:
         self.attention_regions = []
         self.max_width = max_width
         self.t = 0
+        self.prompt_features = []
+        self.add_prompt("Written words.", -0.3)
+        self.add_prompt("Text.", -0.3)
+        self.behaviours = []
 
-    def process_text(self, prompt, neg_prompts=["Written words.", "Text."]):
-        self.nouns, noun_prompts = get_nouns()
-        text_input = clip.tokenize(prompt).to(self.device)
-        self.neg_text_features = []
-        with torch.no_grad():
-            self.nouns_features = self.model.encode_text(
-                torch.cat([clip.tokenize(noun_prompts).to(self.device)])
-            )
-            self.text_features = self.model.encode_text(text_input)
-            self.neg_text_features = [
-                self.model.encode_text(
-                    torch.cat([clip.tokenize(prompt).to(self.device)])
-                )
-                for prompt in neg_prompts
-            ]
+    @torch.no_grad()
+    def add_prompt(self, prompt, weight=1):
+        tokens = clip.tokenize(prompt).to(self.device)
+        latent = self.model.encode_text(tokens)
+        latent.requires_grad = False
+        self.prompt_features.append({
+            "z": latent,
+            "w": weight,
+        })
+
+    @torch.no_grad()
+    def add_latent(self, latent, weight=1):
+        latent.requires_grad = False
+        self.prompt_features.append({
+            "z": latent.to(self.device),
+            "w": weight,
+        })
+    
+    @torch.no_grad()
+    def add_behaviour(self, prompt_0, prompt_1, target, weight=0.3):
+        latent_0 = self.model.encode_text(clip.tokenize(prompt_0).to(self.device))
+        latent_1 = self.model.encode_text(clip.tokenize(prompt_1).to(self.device))
+        self.behaviours.append({
+            "z0": latent_0,
+            "z1": latent_1,
+            "w": weight,
+            "target": target,
+        })
 
     def load_svg_shapes(self, svg_path):
         '''
@@ -272,8 +289,6 @@ class Cicada:
         dead_area = {
             "x0": dead_area["x0"] * self.drawing.canvas_width,
             "x1": dead_area["x1"] * self.drawing.canvas_width,
-            # "y0":(1-dead_area["y1"])*self.drawing.canvas_height,
-            # "y1":(1-dead_area["y0"])*self.drawing.canvas_height,
             "y0": dead_area["y0"] * self.drawing.canvas_height,
             "y1": dead_area["y1"] * self.drawing.canvas_height,
         }
@@ -314,15 +329,19 @@ class Cicada:
         im_batch = torch.cat(img_augs)
         img_features = self.model.encode_image(im_batch)
         for n in range(num_augs):
-            loss -= torch.cosine_similarity(
-                self.text_features, img_features[n : n + 1], dim=1
-            )
-            for neg_text_feat in self.neg_text_features:
-                loss += (
-                    torch.cosine_similarity(
-                        neg_text_feat, img_features[n : n + 1], dim=1
+            for prompt_feat in self.prompt_features:
+                loss -= prompt_feat["w"] * torch.cosine_similarity(
+                    prompt_feat["z"], img_features[n : n + 1], dim=1
+                )
+            for behaviour in self.behaviours:
+                loss += behaviour["w"] * torch.abs(
+                    behaviour["target"]
+                    - torch.cosine_similarity(
+                        behaviour["z0"], img_features[n : n + 1], dim=1
                     )
-                    * 0.3
+                    + torch.cosine_similarity(
+                        behaviour["z1"], img_features[n : n + 1], dim=1
+                    )
                 )
 
         for att_region in self.attention_regions:
