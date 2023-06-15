@@ -8,13 +8,14 @@
 conda create -n cicada
 conda activate cicada
 
+rm diffvg
 git clone https://github.com/BachiLi/diffvg
 cd diffvg
-cp ../fix.py fix.py
+cp ../src/fix.py .
 python3 fix.py
 
 git submodule update --init --recursive
-conda install -y pytorch torchvision -c pytorch
+conda install -y pytorch torchvision -c pytorch -c nvidia
 conda install -y numpy
 conda install -y scikit-image
 conda install -y -c anaconda cmake

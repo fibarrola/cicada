@@ -1,4 +1,7 @@
 import subprocess
+import torch
+
+print("OK" if torch.cuda.is_available() else "Error!")
 
 def get_versions():
 
@@ -15,3 +18,5 @@ def get_versions():
         torch_version_suffix = "+cu110"
 
     return torch_version_suffix, CUDA_version
+
+print(get_versions())
