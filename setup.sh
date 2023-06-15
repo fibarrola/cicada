@@ -5,16 +5,16 @@
 # sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 8
 # sudo update-alternatives --config gcc
 
-conda create -n cicada
+conda create -n -y cicada
 conda activate cicada
 
 git clone https://github.com/BachiLi/diffvg
 cd diffvg
-cp ../fix.py fix.py
+cp ../src/fix.py .
 python3 fix.py
 
 git submodule update --init --recursive
-conda install -y pytorch torchvision -c pytorch
+conda install -y pytorch torchvision pytorch-cuda=11.7 -c pytorch -c nvidia
 conda install -y numpy
 conda install -y scikit-image
 conda install -y -c anaconda cmake
